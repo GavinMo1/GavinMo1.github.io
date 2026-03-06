@@ -4,7 +4,7 @@
   
   
   <entry>
-    <title></title>
+    <title>MySQL日志全解</title>
     <link href="/2026/03/06/MySQL%E6%97%A5%E5%BF%97%E5%85%A8%E8%A7%A3/"/>
     <url>/2026/03/06/MySQL%E6%97%A5%E5%BF%97%E5%85%A8%E8%A7%A3/</url>
     
@@ -12,18 +12,13 @@
     
     
     
-  </entry>
-  
-  
-  
-  <entry>
-    <title>hello-world</title>
-    <link href="/2026/03/06/hello-world/"/>
-    <url>/2026/03/06/hello-world/</url>
-    
-    <content type="html"><![CDATA[]]></content>
-    
-    
+    <tags>
+      
+      <tag>MySQL</tag>
+      
+      <tag>日志</tag>
+      
+    </tags>
     
   </entry>
   
