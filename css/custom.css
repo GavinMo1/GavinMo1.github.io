@@ -1,0 +1,17 @@
+/* 减慢打字机光标闪烁速度 */
+.typed-cursor {
+  opacity: 1;
+  animation: typedjsBlink 1s infinite !important;  /* 2秒闪烁一次 */
+  -webkit-animation: typedjsBlink 1s infinite !important;
+}
+
+/* 覆盖 Typed.js 默认的动画 */
+@keyframes typedjsBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+@-webkit-keyframes typedjsBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
