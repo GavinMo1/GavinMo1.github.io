@@ -1,0 +1,786 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.ico">
+  <link rel="icon" href="/img/favicon-v2.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Gavin">
+  <meta name="keywords" content="Computer Science">
+  
+    <meta name="description" content="ThreadLocal 是 一个用于存储线程私有变量的工具，它 为每个线程维护独立的变量副本，实现线程间数据隔离，避免了多线程并发访问的安全问题；还可在同一线程内完成上下文参数的隐式透传，避免方法间显式传参。 在并发编程中，我们习惯于讨论如何用“锁”来控制对共享资源的访问。但 ThreadLocal 提供了一种完全不同的思路：与其争抢，不如隔离。 ThreadLocal 的 设计初衷并非为了解决多">
+<meta property="og:type" content="article">
+<meta property="og:title" content="ThreadLocal">
+<meta property="og:url" content="https://gavinmo1.github.io/2026/03/06/ThreadLocal/index.html">
+<meta property="og:site_name" content="开发札记">
+<meta property="og:description" content="ThreadLocal 是 一个用于存储线程私有变量的工具，它 为每个线程维护独立的变量副本，实现线程间数据隔离，避免了多线程并发访问的安全问题；还可在同一线程内完成上下文参数的隐式透传，避免方法间显式传参。 在并发编程中，我们习惯于讨论如何用“锁”来控制对共享资源的访问。但 ThreadLocal 提供了一种完全不同的思路：与其争抢，不如隔离。 ThreadLocal 的 设计初衷并非为了解决多">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-03-06T09:42:20.000Z">
+<meta property="article:modified_time" content="2026-03-06T09:48:19.593Z">
+<meta property="article:author" content="Gavin">
+<meta property="article:tag" content="Computer Science">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>ThreadLocal - 开发札记</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"gavinmo1.github.io","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"|","loop":false,"scope":["home"],"blinkSpeed":2000},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>开发札记</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle">ThreadLocal</span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-03-06 17:42" pubdate>
+          2026年3月6日 下午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          3.6k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          30 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">ThreadLocal</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <p>ThreadLocal 是 <strong>一个用于存储线程私有变量的工具</strong>，它 <strong>为每个线程维护独立的变量副本</strong>，<strong>实现线程间数据隔离</strong>，避免了多线程并发访问的安全问题；还可在同一线程内完成上下文参数的隐式透传，避免方法间显式传参。</p>
+<p>在并发编程中，我们习惯于讨论如何用“锁”来控制对共享资源的访问。但 <code>ThreadLocal</code> 提供了一种完全不同的思路：<strong>与其争抢，不如隔离</strong>。</p>
+<p><code>ThreadLocal</code> 的 <strong>设计初衷并非为了解决多线程“共享”变量</strong> 的问题，而是为了实现 <strong>线程封闭（Thread Confinement）</strong>。它通过物理隔离，让每个线程拥有独立的变量副本，从根本上切断了竞争的源头，实现了无锁的线程安全。</p>
+<p>它不仅仅是一个存储工具，更是 Java 这种基于线程模型的语言中，处理上下文（Context）和事务（Transaction）的基石。</p>
+<h2 id="两大核心场景"><a href="#两大核心场景" class="headerlink" title="两大核心场景"></a>两大核心场景</h2><p><code>ThreadLocal</code> 在 Java 生态中主要扮演两个角色：<strong>隐式参数通道</strong> 和 <strong>事务管理基石</strong>。</p>
+<h3 id="场景一：全链路参数透传"><a href="#场景一：全链路参数透传" class="headerlink" title="场景一：全链路参数透传"></a>场景一：全链路参数透传</h3><p>假设你正在维护一个复杂的业务链路：<code>Controller</code> $\rightarrow$ <code>ServiceA</code> $\rightarrow$ <code>ServiceB</code>…… $\rightarrow$ <code>Dao</code>。</p>
+<p>现在的需求是：在数据库新增一个字段 <code>modified_by</code>（修改人），需要从 Controller 层获取当前登录用户的 ID，一直透传到 Dao 层进行存储。</p>
+<ul>
+<li><strong>笨办法（显式传参）</strong>：你需要修改链路上所有方法的签名，把 <code>userId</code> 一层层传下去。哪怕中间的 <code>Service B</code> 根本不需要它，也必须被迫充当“搬运工”。代码侵入性极强。</li>
+<li><strong>错办法（静态变量）</strong>：搞一个 <code>public static String currentUserId</code>？绝对不行。Web 服务器是多线程的，线程 A 刚赋值“张三”，线程 B 可能瞬间把它改成了“李四”，数据全乱套。</li>
+</ul>
+<p>解法：<strong>ThreadLocal 隐式通道</strong></p>
+<p>基于 Web 容器（如 Tomcat 或 Jetty）的 <strong>Thread-Per-Request</strong> 模型（一个请求对应一个独立线程），我们可以利用 <code>ThreadLocal</code> 将数据绑定到当前线程上。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">UserContext</span> &#123;<br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> ThreadLocal&lt;String&gt; USER_HOLDER = <span class="hljs-keyword">new</span> <span class="hljs-title class_">ThreadLocal</span>&lt;&gt;();<br><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">set</span><span class="hljs-params">(String userId)</span> &#123;<br>        USER_HOLDER.set(userId);<br>    &#125;<br><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> String <span class="hljs-title function_">get</span><span class="hljs-params">()</span> &#123;<br>        <span class="hljs-keyword">return</span> USER_HOLDER.get();<br>    &#125;<br>    <br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">remove</span><span class="hljs-params">()</span> &#123;<br>        USER_HOLDER.remove(); <span class="hljs-comment">// 必须清理，防止内存泄漏</span><br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>有人可能会问：<code>USER_HOLDER</code> 是 <code>static</code> 的，全局只有一份，怎么能存不同线程的数据？</p>
+<p>这跟 ThreadLocal 的底层设计有关，下面讲源码时会讲到：因为 <strong>ThreadLocal 仅仅是一个访问入口 (Key) 和管理工具，真正存储数据 (Value) 的容器是 <code>Thread</code> 线程对象自身内部的 <code>ThreadLocalMap</code></strong>。</p>
+<h3 id="场景二：数据库连接与事务管理"><a href="#场景二：数据库连接与事务管理" class="headerlink" title="场景二：数据库连接与事务管理"></a>场景二：数据库连接与事务管理</h3><p>如果说参数传递只是“便利性”问题，那么在数据库连接管理上，<code>ThreadLocal</code> 解决的是生与死的“正确性”问题。</p>
+<p>JDBC 的 <code>java.sql.Connection</code> 是 <strong>非线程安全</strong> 的。</p>
+<p>假设我们要执行更新：</p>
+<ol>
+<li><strong>prepareStatement</strong>：创建 SQL 模板（<code>UPDATE account SET balance = ?</code>）。</li>
+<li><strong>Statement</strong>：这是一个“占位符容器”，是执行 SQL 的骨架。</li>
+<li><strong>executeUpdate</strong>：传入参数，执行。</li>
+</ol>
+<p>假设我们为了省事，创建一个全局共享的 <code>static Connection conn</code>。</p>
+<ul>
+<li><strong>T1 (线程 A)</strong>：拿到 <code>conn</code>，创建 Statement，设置参数 <code>balance = -100</code>。</li>
+<li><strong>T2 (线程 B)</strong>：拿到同一个 <code>conn</code>，创建 Statement，设置参数 <code>balance = +100</code>。</li>
+<li><strong>竞态条件</strong>：<code>Connection</code> 内部通常维护一个当前的 <code>Statement</code> 引用或缓冲区。T2 的操作可能会覆盖 T1 的上下文。</li>
+<li><strong>结果</strong>：T1 执行提交时，可能把 T2 的数据提交了，或者抛出异常。</li>
+</ul>
+<p>失败的尝试</p>
+<ul>
+<li><p><strong>方案 A：加锁 (Synchronized)</strong></p>
+<ul>
+<li>做法：所有数据库操作都加锁。</li>
+<li><strong>代价</strong>：系统吞吐量雪崩。如果有 1000 个并发请求，它们将排队等待这一个连接。这退化成了单线程应用。</li>
+</ul>
+</li>
+<li><p><strong>方案 B：多连接 + 复杂调度</strong></p>
+<ul>
+<li>做法：手动写代码管理连接池，谁用谁取。</li>
+<li><strong>死锁风险</strong>：如果通过连接 A 操作库 1，连接 B 操作库 2。线程 1 拿了 A 等 B，线程 2 拿了 B 等 A，系统直接死锁。</li>
+</ul>
+</li>
+</ul>
+<p>解法：<strong>连接复用与隔离</strong></p>
+<p>这是 Spring <code>@Transactional</code> 声明式事务的魔法来源。</p>
+<p>Spring 的事务管理器（TransactionManager）利用 <code>ThreadLocal</code> 确保：<strong>同一个线程，在同一个事务范围内，使用的是同一个数据库连接</strong>。</p>
+<p><strong>内部核心类 <code>TransactionSynchronizationManager</code></strong> 大致逻辑如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// 伪代码：Spring 事务管理的资源持有者</span><br><span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> ThreadLocal&lt;Map&lt;Object, Object&gt;&gt; resources = <span class="hljs-keyword">new</span> <span class="hljs-title class_">ThreadLocal</span>&lt;&gt;();<br></code></pre></td></tr></table></figure>
+
+<ul>
+<li><code>ThreadLocal&lt;Map&lt;Object, Object&gt;&gt;</code>：<strong>最核心</strong>。Key 是 DataSource，Value 是 ConnectionHolder（包装了 JDBC Connection）。确保同一线程、同一事务内复用同一个连接。</li>
+<li><code>ThreadLocal&lt;Set&lt;...&gt;&gt;</code>：存储当前线程的事务回调（如 commit 后发消息、清理缓存）。</li>
+<li><code>ThreadLocal&lt;String&gt;</code>：存储当前事务名称，用于监控和日志。</li>
+</ul>
+<p>执行流程 (DataSourceTransactionManager)：</p>
+<ol>
+<li><strong>开启事务</strong>：DSTM 从连接池获取一个全新的 <code>Connection</code>。</li>
+<li><strong>绑定资源</strong>：调用 <code>TSM.bindResource()</code>，将这个 <code>Connection</code> 放入当前线程的 <code>ThreadLocal (resources)</code> 中。</li>
+<li><strong>业务执行</strong>：Dao 层执行 SQL 时，不是自己去连接池拿连接，而是通过 <code>DataSourceUtils</code> 从 <code>ThreadLocal</code> 中获取当前事务绑定的那个连接。这样，虽然 ServiceA、ServiceB、ServiceC 在不同方法，但因为在同一个线程，拿到的都是 <strong>同一个 <code>Connection</code></strong>。这保证了它们在同一个事务内。</li>
+<li><strong>提交&#x2F;回滚</strong>：利用该连接进行 commit&#x2F;rollback。</li>
+<li><strong>清理</strong>：调用 <code>TSM.unbindResource()</code>，清空 <code>ThreadLocal</code>，将连接归还给连接池。</li>
+</ol>
+<p>这不仅避免了昂贵的锁竞争，还完美解决了跨方法的事务传播问题。</p>
+<h2 id="核心原理：Thread-才是真正的仓库"><a href="#核心原理：Thread-才是真正的仓库" class="headerlink" title="核心原理：Thread 才是真正的仓库"></a>核心原理：Thread 才是真正的仓库</h2><p><strong>误区</strong>：认为 <code>ThreadLocal</code> 内部维护了一个 <code>Map&lt;Thread, Object&gt;</code>，把数据存得满地都是。</p>
+<p><strong>真相</strong>：<strong>数据其实是存在线程（Thread）自己的“口袋”里的</strong>。</p>
+<h3 id="内存关系图"><a href="#内存关系图" class="headerlink" title="内存关系图"></a>内存关系图</h3><ul>
+<li><strong>Thread (宿主)</strong>：每个 <code>Thread</code> 对象内部都有一个 <code>ThreadLocalMap</code> 类型的成员变量 <code>threadLocals</code>。</li>
+<li><strong>ThreadLocalMap (口袋)</strong>：这是 <code>ThreadLocal</code> 的静态内部类，本质是一个定制版的 HashMap。</li>
+<li><strong>ThreadLocal (钥匙)</strong>：它只是一个访问入口。</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs java">Thread (线程对象)<br>  |<br>  |__ <span class="hljs-title function_">threadLocals</span> <span class="hljs-params">(成员变量, 类型为 ThreadLocalMap)</span><br>        |<br>        |__ Entry[] (数组, 存储多个 Entry)<br>              |<br>              |__ Entry <span class="hljs-number">1</span><br>              |     |__ <span class="hljs-title function_">Key</span>   <span class="hljs-params">(弱引用指向 ThreadLocal A)</span><br>              |     |__ <span class="hljs-title function_">Value</span> <span class="hljs-params">(强引用指向 业务数据 A)</span><br>              |<br>              |__ Entry <span class="hljs-number">2</span><br>                    |__ <span class="hljs-title function_">Key</span>   <span class="hljs-params">(弱引用指向 ThreadLocal B)</span><br>                    |__ <span class="hljs-title function_">Value</span> <span class="hljs-params">(强引用指向 业务数据 B)</span><br></code></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">Thread</span> &#123;<br>    <span class="hljs-comment">// 真正的仓库在 Thread 类里面</span><br>    ThreadLocal.<span class="hljs-type">ThreadLocalMap</span> <span class="hljs-variable">threadLocals</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>;<br>&#125;<br><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">ThreadLocal</span>&lt;T&gt; &#123;<br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">set</span><span class="hljs-params">(T value)</span> &#123;<br>        <span class="hljs-comment">// 获取当前线程</span><br>        <span class="hljs-type">Thread</span> <span class="hljs-variable">t</span> <span class="hljs-operator">=</span> Thread.currentThread();<br>        <span class="hljs-comment">// 拿到线程自己的 Map</span><br>        <span class="hljs-type">ThreadLocalMap</span> <span class="hljs-variable">map</span> <span class="hljs-operator">=</span> getMap(t);<br>        <span class="hljs-keyword">if</span> (map != <span class="hljs-literal">null</span>)<br>            <span class="hljs-comment">// 【关键】以 &quot;this&quot; (ThreadLocal实例) 为 Key，存入数据</span><br>            map.set(<span class="hljs-built_in">this</span>, value);<br>        <span class="hljs-keyword">else</span><br>            createMap(t, value);<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="为什么-ThreadLocalMap-不用链表？"><a href="#为什么-ThreadLocalMap-不用链表？" class="headerlink" title="为什么 ThreadLocalMap 不用链表？"></a>为什么 ThreadLocalMap 不用链表？</h3><p><code>ThreadLocalMap</code> 是 <code>ThreadLocal</code> 的静态内部类，虽然名为 Map，但它与 <code>HashMap</code> 有显著不同：</p>
+<ul>
+<li><strong>没有链表&#x2F;红黑树</strong>：它完全采用数组存储 (<code>Entry[] table</code>)。</li>
+<li><strong>解决冲突策略</strong>：采用 <strong>开放寻址法</strong> 中的 <strong>线性探测</strong>。计算 hash 对应下标，如果该位置已被占用，则 <code>index + 1</code> 向后寻找下一个空位，直到找到为止。</li>
+<li><strong>优势</strong>：结构简单，<strong>省内存</strong>（无链表指针开销）。数组内存连续，利用 <strong>CPU 缓存行机制</strong>，在冲突较少时访问效率极高。</li>
+<li><strong>劣势</strong>：如果冲突严重，探测路径变长，性能会急剧下降。这也是为什么建议 ThreadLocal 存储对象不宜过多。<ul>
+<li><strong>应对</strong>：JDK 引入了 <strong>黄金分割数魔数</strong> <code>0x61c88647</code>（与 <strong>黄金分割点</strong> 有关。$ ( \sqrt{5} - 1 ) &#x2F; 2 \times 2^{32} \approx 2654435769 $ (即 0x61c88647)）。每创建一个 ThreadLocal，哈希值就累加这个数。实验证明，这能让数据在 $2^n$ 大小的数组中分布得极其均匀，最大程度减少冲突。对使用“线性探测法”的 Map 至关重要。</li>
+</ul>
+</li>
+</ul>
+<h2 id="隐患：内存泄漏"><a href="#隐患：内存泄漏" class="headerlink" title="隐患：内存泄漏"></a>隐患：内存泄漏</h2><p>既然数据存在线程里，而线程（特别是线程池核心线程）是长期存活的，那这些数据岂不是永远无法释放？</p>
+<p>先来看看这个情况：</p>
+<p>如果我们新建了一个线程，这个线程做完自己的事，然后被销毁：</p>
+<p>Thread 创建 ThreadLocal 并调用 set 方法。创建 ThreadLocalMap，并与之绑定。</p>
+<p>现在的引用关系：</p>
+<ul>
+<li>Thread 引用 ThreadLocalMap。</li>
+<li>Enrty 的 key 又存储了 ThreadLocal 的引用，value 存储了我们 set 的对象的引用。</li>
+</ul>
+<p>Thread 的任务执行完毕，Thread 被销毁：</p>
+<ul>
+<li>此时 Thread 对 ThreadLocalMap 的引用消失。ThreadLocalMap 当前没有任何引用，下一次 GC 被回收。</li>
+<li>此时 Enrty 数组也失去了引用，下一次 GC 被回收。</li>
+<li>Enrty 中的 key（ThreadLocal），value 不再被引用，GC 回收。</li>
+</ul>
+<p>上面是一个线程正常的生命流程，没有任何的内存泄漏。</p>
+<p>但如果这个线程是 <strong>线程池的核心线程</strong>，十天半个月甚至几个月都不销毁，那么 Thread 就会一直引用着 ThreadLocalMap，进而导致 key 和 value 一直不能被回收。这样就发生了内存泄漏。</p>
+<p>为了缓解这个问题，JDK 采用了一种“<strong>弱引用</strong>”策略。但这只是 <strong>半个</strong> 解法。</p>
+<p><code>ThreadLocalMap</code> 的 Entry 定义如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// Entry 继承自 WeakReference，Key 是弱引用</span><br><span class="hljs-keyword">static</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">Entry</span> <span class="hljs-keyword">extends</span> <span class="hljs-title class_">WeakReference</span>&lt;ThreadLocal&lt;?&gt;&gt; &#123;<br>    Object value; <span class="hljs-comment">// Value 是强引用</span><br>    Entry(ThreadLocal&lt;?&gt; k, Object v) &#123;<br>        <span class="hljs-built_in">super</span>(k); <br>        value = v;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<ul>
+<li><strong>Key (ThreadLocal)</strong>：<strong>若 Key 为强引用</strong>，只要线程存活（如线程池核心线程），Map 就持有 Key 的引用。即使外部局部变量 <code>tl</code> 销毁，<code>ThreadLocal</code> 对象也无法回收，导致必然的内存泄漏。<strong>改为弱引用后</strong>，外部强引用消失，GC 会回收 <code>ThreadLocal</code> 对象，Map 中的 Key 变为 <code>null</code>。</li>
+<li><strong>Value (业务数据)</strong>：<strong>强引用</strong>。必须强引用，Value 是业务数据，其 <strong>生命周期必须由业务代码控制</strong>。若为弱引用，可能在业务逻辑执行中途被 GC 清理，导致 <code>NullPointerException</code>。</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><code class="hljs java">[当前线程栈帧]                [堆内存 Heap]<br>+-------------+            +---------------------+<br>| 正在执行的方法 |            |  Thread 对象 (张三)  |<br>|             |            |                     |<br>| 局部变量 tl  |-----------&gt;|  threadLocals (Map) |<br>+------+------+            |   (张三的口袋)        |<br>       |                   |   +-------------+   |<br>       | (强引用)           |   | Entry[]数组 |   |<br>       |                   |   +------+------+   |<br>       |                   +----------|----------+<br>       |                              |<br>       |                              |<br>       v                              v<br>+----------------+         +------------------+<br>| ThreadLocal对象 | &lt;-------| 		Entry       |<br>|   (钥匙)        | (弱引用) | Key      Value   |<br>+----------------+         +-----------+------+<br>                                       |(强引用) <br>                                       v<br>                                 +------------+<br>                                 | 业务数据Obj |<br>                                 +------------+<br></code></pre></td></tr></table></figure>
+
+<p>所以，value 怎么办呢？当 Key 被 GC 回收变成 <code>null</code> 后，引用链就变成了：</p>
+<blockquote>
+<p><strong>Current Thread</strong>-&gt; <strong>ThreadLocalMap</strong>-&gt; <strong>Entry</strong>-&gt; <strong>Value</strong>-&gt; <strong>Object</strong></p>
+</blockquote>
+<ul>
+<li><strong>问题</strong>：Key 没了，你再也访问不到这个 Value 了。</li>
+<li><strong>后果</strong>：只要线程不结束，这条强引用链就一直存在，这块内存永远无法回收。这就是内存泄漏。</li>
+</ul>
+<p>虽然 <code>ThreadLocalMap</code> 采用了一种“探测式清理”策略。在调用 <code>set()</code>、<code>get()</code>、<code>remove()</code> 时，它会顺便检查哈希槽里有没有 Key 为 <code>null</code> 的脏 Entry，如果有就清理掉。但这种清理是被动的 <strong>。一旦你不再调用这些方法，或者线程归还给线程池后处于空闲状态，垃圾就会一直堆积</strong>。</p>
+<p>设为 static 就不会有内存泄漏的问题了？</p>
+<p>网上会有很多教程说，设置为 static 就不会有内存泄漏问题了。那我们来看看吧。就拿一开始的应用举例。</p>
+<p>设置为 static，全局将只有这一个 ThreadLocal。所有线程共用这一个静态的 ThreadLocal。当然，这不影响线程隔离，因为实际上实现线程隔离的是 ThreadLocalMap。</p>
+<p>这种解决方案是，全局仅使用一个 ThreadLocal 作为一把“钥匙”。第一次请求存入了 ValueA。这条请求即使结束了，我们依旧可以用 ThreadLocal.get 定位到这个对象。因为 ThreadLocal 是全局唯一的。</p>
+<p>而下一次，有新的请求，又调用了 set 方法，就会直接覆盖掉上一次 set 的对象。</p>
+<p>这样子大概已经够用了。但还是会有问题。假如我们存入了一个非常大的对象，又一直没有新的请求调用 ThreadLocal.set，这个对象就会一直放在这里，浪费内存。</p>
+<h2 id="最佳实践"><a href="#最佳实践" class="headerlink" title="最佳实践"></a>最佳实践</h2><h3 id="为什么-Map-存在于-Thread-对象中，而不是-ThreadLocal-对象中？"><a href="#为什么-Map-存在于-Thread-对象中，而不是-ThreadLocal-对象中？" class="headerlink" title="为什么 Map 存在于 Thread 对象中，而不是 ThreadLocal 对象中？"></a>为什么 Map 存在于 Thread 对象中，而不是 ThreadLocal 对象中？</h3><p>假设 <code>ThreadLocal</code> 自己维护一个 Map，用来记录各个线程存了什么值。</p>
+<p>结构大概是：<code>Map&lt;Thread, Value&gt;</code>。</p>
+<ul>
+<li><p><strong>逻辑：</strong> 线程 A 来存数据，<code>ThreadLocal</code> 就记录 <code>map.put(ThreadA, &quot;数据&quot;)</code>。</p>
+</li>
+<li><p><strong>致命缺陷 1：并发冲突（性能差）</strong></p>
+<ul>
+<li><code>ThreadLocal</code> 对象通常是全局共享的（比如定义为 <code>static final</code>）。</li>
+<li>如果有 100 个线程同时在这个 <code>ThreadLocal</code> 中存取数据，它们访问的是 <strong>同一个 Map</strong>。</li>
+<li>为了数据安全，这个 Map 必须加锁（或者用 <code>ConcurrentHashMap</code>）。<strong>这会导致严重的锁竞争</strong>，违背了 ThreadLocal “线程隔离”的初衷。</li>
+</ul>
+</li>
+<li><p><strong>致命缺陷 2：生命周期不一致（内存泄漏）</strong></p>
+<ul>
+<li>如果线程 A 销毁了，但 <code>ThreadLocal</code> 里的 Map 还存着 <code>Key=ThreadA</code> 的数据。你必须有一种机制去监听线程销毁事件来清理 Map，否则全是垃圾数据。</li>
+</ul>
+</li>
+</ul>
+<p>现在的结构是：<code>Thread</code> 对象内部有一个成员变量 <code>ThreadLocalMap threadLocals</code>。</p>
+<p>这个 Map 的 Key 是 <code>ThreadLocal</code> 对象，Value 是具体的值。</p>
+<ul>
+<li><p><strong>逻辑：</strong></p>
+<ul>
+<li><code>ThreadLocal</code> 更像是一个 <strong>“访问入口”</strong> 或 <strong>“钥匙”</strong>。</li>
+<li>当你调用 <code>tl.set(&quot;数据&quot;)</code> 时，<code>ThreadLocal</code> 实际上是转身去找当前线程：“嘿，线程老兄，把你口袋里的 Map 拿出来，把‘我’作为 Key，‘数据’作为 Value 存进去。”</li>
+<li>代码逻辑：<code>Thread.currentThread().map.put(this, &quot;数据&quot;)</code>。</li>
+</ul>
+</li>
+<li><p><strong>优势 1：绝对的线程安全（无锁）</strong></p>
+<ul>
+<li>每个线程只访问 <strong>自己的</strong> Map（存在自己的 Thread 对象里）。</li>
+<li>线程 A 访问线程 A 的 Map，线程 B 访问线程 B 的 Map。</li>
+<li><strong>完全不存在竞争，不需要任何锁</strong>。这就是 ThreadLocal 高效的根本原因。</li>
+</ul>
+</li>
+<li><p><strong>优势 2：生命周期自动绑定</strong></p>
+<ul>
+<li>数据是存在 <code>Thread</code> 对象里的。</li>
+<li><strong>一旦线程销毁</strong>（Thread 对象被 GC），它肚子里的 <code>ThreadLocalMap</code> 自然也就销毁了，里面的 Value 也就随之释放了。</li>
+<li>（注：这指的是线程真正销毁的情况。如果是线程池，线程不死，Map 不毁，所以才需要弱引用机制来辅助回收 Key）。</li>
+</ul>
+</li>
+</ul>
+<h3 id="铁律：Try-Finally-必须-Remove"><a href="#铁律：Try-Finally-必须-Remove" class="headerlink" title="铁律：Try-Finally 必须 Remove"></a>铁律：Try-Finally 必须 Remove</h3><p>这是防止内存泄漏的唯一绝对手段，没有之一。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">try</span> &#123;<br>    UserContext.set(user);<br>    <span class="hljs-comment">// 执行业务逻辑</span><br>    doSomething();<br>&#125; <span class="hljs-keyword">finally</span> &#123;<br>    <span class="hljs-comment">// 必须在 finally 中清理，确保发生异常也能执行</span><br>    UserContext.remove();<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="如何解决父子线程传递？"><a href="#如何解决父子线程传递？" class="headerlink" title="如何解决父子线程传递？"></a>如何解决父子线程传递？</h3><p><strong>问题</strong>：<code>ThreadLocal</code> 里的数据，子线程（<code>new Thread</code>）是拿不到的。</p>
+<p><strong>原生方案</strong>：<code>InheritableThreadLocal</code>。它在创建线程时，会将父线程的 Map <strong>浅拷贝</strong> 给子线程。</p>
+<ul>
+<li><strong>致命缺陷</strong>：它只在“创建线程”那一刻拷贝。但在 <strong>线程池</strong> 场景下，线程是复用的，不会重复触发创建过程。后续提交的任务无法获取父线程最新的上下文。</li>
+</ul>
+<p><strong>工业级解法</strong>：使用阿里开源的 <strong>TTL (TransmittableThreadLocal)</strong>。它通过 <strong>装饰器模式</strong>，对 <code>Runnable</code>&#x2F;<code>Callable</code> 进行修饰，在任务提交和执行的时机进行动态挂载和恢复上下文。</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>ThreadLocal</div>
+      <div>https://gavinmo1.github.io/2026/03/06/ThreadLocal/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Gavin</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2026年3月6日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by-sa/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by-sa/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="SA - 相同方式共享">
+                    <i class="iconfont icon-cc-sa"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2026/03/06/MySQL%E9%80%BB%E8%BE%91%E6%9E%B6%E6%9E%84%E4%B8%8E%E5%AD%98%E5%82%A8/" title="MySQL逻辑架构与存储">
+                        <span class="hidden-mobile">MySQL逻辑架构与存储</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"> <span>Hexo</span> </a> <i class="iconfont icon-love"> </i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"> <span>Fluid</span> </a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>
