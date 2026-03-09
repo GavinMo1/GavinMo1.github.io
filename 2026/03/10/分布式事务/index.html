@@ -1,0 +1,877 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.ico">
+  <link rel="icon" href="/img/favicon-v2.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Gavin">
+  <meta name="keywords" content="Computer Science">
+  
+    <meta name="description" content="在单体应用时代，事务（Transaction）是数据库送给开发者最昂贵的礼物。你只需要由 Spring 加上 @Transactional 注解，数据库就会保证：要么全做，要么全不做。 但当你把系统从单体拆分成微服务，或者引入了多个数据库时，这个“魔法”失效了。 假设你在开发一个电商系统。用户点击“下单”按钮，后台需要发生两个动作：  订单服务：在订单库创建一条订单记录。 库存服务：在库存库扣减一">
+<meta property="og:type" content="article">
+<meta property="og:title" content="分布式事务">
+<meta property="og:url" content="https://gavinmo1.github.io/2026/03/10/%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1/index.html">
+<meta property="og:site_name" content="开发札记">
+<meta property="og:description" content="在单体应用时代，事务（Transaction）是数据库送给开发者最昂贵的礼物。你只需要由 Spring 加上 @Transactional 注解，数据库就会保证：要么全做，要么全不做。 但当你把系统从单体拆分成微服务，或者引入了多个数据库时，这个“魔法”失效了。 假设你在开发一个电商系统。用户点击“下单”按钮，后台需要发生两个动作：  订单服务：在订单库创建一条订单记录。 库存服务：在库存库扣减一">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-03-09T16:27:28.000Z">
+<meta property="article:modified_time" content="2026-03-09T16:36:29.815Z">
+<meta property="article:author" content="Gavin">
+<meta property="article:tag" content="CAP定理">
+<meta property="article:tag" content="分布式事务">
+<meta property="article:tag" content="微服务架构">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>分布式事务 - 开发札记</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+  
+<link rel="stylesheet" href="/css/custom.css">
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"gavinmo1.github.io","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"|","loop":false,"scope":["home"]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>开发札记</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/dream.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle">分布式事务</span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-03-10 00:27" pubdate>
+          2026年3月10日 凌晨
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          4.4k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          37 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">分布式事务</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <p>在单体应用时代，事务（Transaction）是数据库送给开发者最昂贵的礼物。你只需要由 Spring 加上 <code>@Transactional</code> 注解，数据库就会保证：要么全做，要么全不做。</p>
+<p>但当你把系统从单体拆分成微服务，或者引入了多个数据库时，这个“魔法”失效了。</p>
+<p>假设你在开发一个电商系统。用户点击“下单”按钮，后台需要发生两个动作：</p>
+<ol>
+<li><strong>订单服务</strong>：在订单库创建一条订单记录。</li>
+<li><strong>库存服务</strong>：在库存库扣减一个商品库存。</li>
+</ol>
+<p>如果在单体架构下，这是一个本地事务。但在微服务架构下，这是两个跨网络的独立调用。如果订单创建成功了，网络抖动导致库存扣减请求超时，或者库存扣减成功了，但订单服务挂了，数据库的数据就会出现“不一致”：多卖了货，或者少记了账。</p>
+<p>这就是分布式事务要解决的核心问题：<strong>如何跨越网络的不确定性，维持数据的一致性</strong>？</p>
+<h2 id="理论基石"><a href="#理论基石" class="headerlink" title="理论基石"></a>理论基石</h2><p>在深入具体方案之前，我们需要理解悬在所有分布式系统头顶的两把利剑：<strong>CAP 定理</strong> 与 <strong>BASE 理论</strong>。</p>
+<h3 id="CAP-定理：不得不做的选择题"><a href="#CAP-定理：不得不做的选择题" class="headerlink" title="CAP 定理：不得不做的选择题"></a>CAP 定理：不得不做的选择题</h3><p>该理论最初由 Eric Brewer 在 2000 年 PODC 会议上提出猜想，后由 Seth Gilbert 和 Nancy Lynch 在 2002 年通过形式化证明确立。</p>
+<p>定理内容为：在一个分布式数据存储系统中，<strong>一致性、可用性、分区容错性</strong> 这三个基本要素，<strong>最多只能同时满足其中的两项</strong>。</p>
+<ul>
+<li>C (<strong>C</strong> onsistency)：一致性（所有节点在同一时间看到的数据是相同的）。</li>
+<li>A (<strong>A</strong> vailability)：可用性（系统总能响应请求，即使部分节点挂了）。</li>
+<li>P (<strong>P</strong> artition tolerance)：分区容错性（当 <strong>网络因为故障导致节点之间通信中断（即发生网络分区）</strong>，系统仍能持续运行并提供服务。）。</li>
+</ul>
+<p>由于 <strong>网络不可靠是客观事实</strong>，<strong>P（分区容错）是必须满足的前提</strong>。</p>
+<p>因此，真正的抉择在于：当网络分区发生时，系统选择 CP（强一致，但在网络抖动时系统不可用） 还是 AP（高可用，但允许数据暂时不一致）。</p>
+<p>CP 架构：一致性优先</p>
+<ul>
+<li><strong>设计逻辑</strong>：当发生分区导致部分节点无法同步时，为了保证数据准确（C），系统选择拒绝服务或阻塞请求，直到网络恢复并达成共识。</li>
+<li><strong>代价</strong>：在分区期间，部分或全部服务不可用，系统的可用性下降。</li>
+<li><strong>核心技术</strong>：<ul>
+<li><strong>共识算法</strong>：Paxos, Raft, Zab。</li>
+<li><strong>多数派机制（Quorum）</strong>：写入必须获得超过半数节点的确认。</li>
+</ul>
+</li>
+<li><strong>典型系统</strong>：<ul>
+<li><strong>ZooKeeper &#x2F; Etcd</strong>：用于分布式协调和元数据管理，Leader 选举期间集群对外不可用。</li>
+<li><strong>HBase</strong>：基于 RegionServer 的行锁机制保证强一致性。</li>
+<li><strong>Redis (Sentinel&#x2F;Cluster)</strong>：在默认配置及故障转移期间，实际上倾向于 CP，但在某些极端情况下可能丢失数据（异步复制导致）。</li>
+</ul>
+</li>
+<li><strong>适用场景</strong>：金融交易、库存扣减、分布式锁、元数据管理。</li>
+</ul>
+<p>AP 架构：可用性优先</p>
+<ul>
+<li><strong>设计逻辑</strong>：当发生分区时，优先保证业务不中断，允许节点返回本地的旧版本数据（Stale Data）。待网络恢复后，再通过后台机制进行数据合并与冲突解决。</li>
+<li><strong>代价</strong>：不同分区的节点持有不同版本的数据，出现“脑裂”或数据不一致，需要复杂的冲突合并逻辑。</li>
+<li><strong>核心技术</strong>：<ul>
+<li><strong>Gossip 协议</strong>：节点间随机通信传播状态。</li>
+<li><strong>冲突解决</strong>：向量时钟（Vector Clock）、最后写入胜出（LWW）、CRDTs（无冲突复制数据类型）。</li>
+<li><strong>反熵机制（Anti-Entropy）</strong>：如 Read Repair（读修复）和 Hinted Handoff（提示移交）。</li>
+</ul>
+</li>
+<li><strong>典型系统</strong>：<ul>
+<li><strong>Cassandra &#x2F; DynamoDB</strong>：基于最终一致性模型，写入即可返回，后台异步同步。</li>
+<li><strong>Eureka</strong>：服务发现组件，优先保证客户端能获取服务列表，即使列表包含已下线的服务。</li>
+</ul>
+</li>
+<li><strong>适用场景</strong>：社交动态点赞、商品评论、DNS 解析、Web 缓存、内容分发网络（CDN）。</li>
+</ul>
+<blockquote>
+<p>PACELC 理论</p>
+<p>由 Daniel Abadi 提出，填补了 CAP 理论中“无分区时如何权衡”的空白。</p>
+<ul>
+<li><strong>P (Partition)</strong>：如果有网络分区，必须在 <strong>A（可用性）</strong> 和 <strong>C（一致性）</strong> 之间选择。</li>
+<li><strong>E (Else)</strong>：如果没有网络分区（系统正常运行时），必须在 <strong>L（Latency，延迟）</strong> 和 <strong>C（一致性）</strong> 之间选择。</li>
+<li><strong>深层含义</strong>：强一致性通常意味着需要等待更多节点的确认，这必然增加延迟。如果追求极致的低延迟，往往需要放宽一致性要求。</li>
+</ul>
+</blockquote>
+<h3 id="BASE-理论：反抗强一致性"><a href="#BASE-理论：反抗强一致性" class="headerlink" title="BASE 理论：反抗强一致性"></a>BASE 理论：反抗强一致性</h3><p>为了追求互联网应用的高可用，我们往往退而求其次，遵循 <strong>BASE</strong> 理论：</p>
+<ul>
+<li><strong>BA (Basically Available)</strong>：基本可用（允许服务降级）。</li>
+<li><strong>S (Soft state)</strong>：软状态（允许存在中间状态，如“支付中”）。</li>
+<li><strong>E (Eventually consistent)</strong>：最终一致性（经过一段时间，数据终变一致）。</li>
+</ul>
+<p>反面教材：2PC (两阶段提交)</p>
+<p>最早的尝试是 <strong>2PC (Two-Phase Commit)</strong>，这是一种试图在分布式环境实现“严格原子性”的协议。</p>
+<ul>
+<li><strong>阶段 1 (Prepare)</strong>：协调者问所有参与者：“能提交吗？”参与者锁定资源，写日志，但不提交。</li>
+<li><strong>阶段 2 (Commit)</strong>：全员回复 Yes 则提交；只要有一个 No 则全员回滚。</li>
+</ul>
+<p>为什么互联网大厂不用它？</p>
+<ul>
+<li><strong>同步阻塞</strong>：所有人都要等最慢的那个人。</li>
+<li><strong>死锁风险</strong>：协调者挂了，参与者会无限期持有锁。</li>
+<li><strong>性能毒药</strong>：在微服务高并发场景下，这种长时锁是吞吐量的杀手。</li>
+</ul>
+<h2 id="主流解决方案"><a href="#主流解决方案" class="headerlink" title="主流解决方案"></a>主流解决方案</h2><p><strong>Seata (Simple Extensible Autonomous Transaction Architecture)</strong> 是阿里巴巴开源的一站式分布式事务解决方案，它致力于让分布式事务的使用像本地事务一样简单。</p>
+<h3 id="Seata-AT-模式"><a href="#Seata-AT-模式" class="headerlink" title="Seata AT 模式"></a>Seata AT 模式</h3><p>Seata AT 模式的设计目标是：<strong>把分布式事务变得像本地事务一样简单。</strong></p>
+<p>想象你在编辑文档，当你犯错时，按下 <code>Ctrl+Z</code> 就能撤销。Seata AT 就是给数据库操作装了一个自动的 <code>Ctrl+Z</code>。</p>
+<p>你不需要修改业务代码，只需要在方法上打一个注解。Seata 会利用代理机制，拦截你的 SQL，自动记录“修改前的数据”和“修改后的数据”。如果所有服务都成功，它就清理掉这些记录；如果有服务失败，它就利用这些记录把数据还原。</p>
+<p>Seata 在你的业务 SQL 执行前后，悄悄做了手脚。</p>
+<p>核心流程（伪代码）：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs text">// 阶段一：执行并记录<br>1. 解析业务 SQL： UPDATE product SET stock = 99 WHERE id = 1;<br>2. 查询前镜像 (Before Image)：记录 stock = 100;<br>3. 执行业务 SQL： stock 变为 99;<br>4. 查询后镜像 (After Image)：记录 stock = 99;<br>5. 插入 Undo Log：将前后镜像打包存入 undo_log 表;<br>6. 提交本地事务 (业务数据 + undo_log 同时生效);<br><br>// 阶段二：决断<br>IF (全局提交) &#123;<br>    异步删除 undo_log; // 极其快速<br>&#125; ELSE (全局回滚) &#123;<br>    根据 undo_log 生成反向 SQL;<br>    UPDATE product SET stock = 100 WHERE id = 1;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>AT 模式是典型的“低门槛”方案，但工程界没有免费的午餐。它有一个致命隐患：<strong>脏写（Dirty Write）</strong>。</p>
+<p>如果有一个非 Seata 管理的后台脚本，直接去修改了数据库，会发生什么？</p>
+<ol>
+<li>事务 A 修改库存 ，提交本地事务（释放了数据库行锁）。</li>
+<li><strong>外部脚本</strong> 修改库存 。</li>
+<li>事务 A 收到回滚指令，根据 Before Image (100) 强行回滚：<code>SET stock = 100</code>。</li>
+<li><strong>结果</strong>：外部脚本修改的 80 被覆盖丢失了。</li>
+</ol>
+<p>为了解决这个问题，Seata 引入了 <strong>全局锁</strong>。在二阶段提交&#x2F;回滚完成前，该记录被 Seata 的协调者（TC）逻辑锁定。这带来了一个严重的性能权衡：<strong>热点数据的高并发写</strong>。</p>
+<p>如果你的业务是“秒杀”场景，成千上万的请求同时抢夺同一行库存记录的全局锁，Seata AT 将成为系统的性能瓶颈，且极易引发死锁。</p>
+<p><strong>结论</strong>：AT 适合并发量适中、非热点数据、追求开发效率的中后台业务。</p>
+<h3 id="XA-模式"><a href="#XA-模式" class="headerlink" title="XA 模式"></a>XA 模式</h3><p>在 AT 模式中，Seata 需要自己在应用层解析 SQL、生成 Undo Log，这就像是一个“外挂”。</p>
+<p>而 <strong>XA 模式</strong> 是数据库（MySQL、Oracle、PostgreSQL）<strong>自带</strong> 的功能。它遵循 X&#x2F;Open 组织制定的 DTP（Distributed Transaction Processing）标准。</p>
+<p>类比：正规的法律合同</p>
+<ul>
+<li><strong>AT 模式</strong>：是你和朋友私下约定的“君子协定”，如果反悔了，你们自己负责恢复现场。</li>
+<li><strong>XA 模式</strong>：是走了公证处的“法律合同”。数据库本身（公证处）保证：只要你签了字（Prepare），我就确保这件事一定能成，或者一定能退，不需要你自己操心怎么退。</li>
+</ul>
+<p>XA 是 <strong>2PC（两阶段提交）</strong> 的标准实现。</p>
+<ul>
+<li><strong>一阶段（Prepare）</strong>：业务代码执行 SQL，但在提交时，Seata（TM）会告诉数据库：“先别真提交，把资源锁死，数据写入日志，进入‘准备好’的状态”。此时，数据库会锁定这一行数据，任何人都动不了。</li>
+<li><strong>二阶段（Commit &#x2F; Rollback）</strong>：Seata 收集所有服务的状态。<ul>
+<li><strong>全成功</strong>：通知数据库“正式提交”，数据库释放锁，数据生效。</li>
+<li><strong>有失败</strong>：通知数据库“回滚”，数据库利用自身的日志恢复，释放锁。</li>
+</ul>
+</li>
+</ul>
+<p>Seata XA 与 Seata AT 的核心区别</p>
+<ul>
+<li><strong>AT</strong>：锁在 Seata 侧（Global Lock），数据库本地事务早就提交了。回滚靠 Undo Log。</li>
+<li><strong>XA</strong>：锁在数据库侧，数据库本地事务一直 <strong>挂起</strong>，直到二阶段结束。</li>
+</ul>
+<p>优点：</p>
+<ol>
+<li><strong>强一致性</strong>：由数据库保证，没有脏读，没有中间状态。</li>
+<li><strong>SQL 支持度完美</strong>：AT 模式解析复杂 SQL（如存储过程、复杂连接）可能会失败，但 XA 是数据库原生的，支持所有 SQL。</li>
+<li><strong>无侵入</strong>：不需要像 AT 那样建 <code>undo_log</code> 表。</li>
+</ol>
+<p>缺点：</p>
+<ol>
+<li><strong>性能短板</strong>：因为数据库锁要持有到第二阶段结束（跨网络通讯），锁的时间长，并发度低。</li>
+<li><strong>木桶效应</strong>：如果协调者（TC）挂了，或者网络断了，数据库的锁会一直释放不掉，导致业务瘫痪。</li>
+</ol>
+<p>为什么它又“重获新生”了？</p>
+<p>过去互联网公司不用 XA 是因为性能差。但随着 <strong>云原生数据库</strong>（如阿里云 PolarDB）和 <strong>高速网络</strong> 的普及，XA 的性能损耗被大幅降低。现在，Seata 的 XA 模式已经优化得非常好了，对于 <strong>非高并发、但数据极其重要</strong> 的系统（如内部 ERP、财务系统），XA 是最稳妥的选择。</p>
+<h3 id="Seata-TCC-模式"><a href="#Seata-TCC-模式" class="headerlink" title="Seata TCC 模式"></a>Seata TCC 模式</h3><p>AT 模式因为要加全局锁，性能有上限。为了追求极致性能，我们需要把锁的粒度从“数据库层面”移交到“业务逻辑层面”。</p>
+<p>类比：买房交定金</p>
+<ul>
+<li><strong>Try (定金)</strong>：你不用付全款，先付 5 万定金。房产中介把房子“锁”住（预留），别人买不了。</li>
+<li><strong>Confirm (交房)</strong>：你凑齐了首付，正式过户。</li>
+<li><strong>Cancel (退定)</strong>：你反悔了，中介把房子释放出来卖给别人，定金退回。</li>
+</ul>
+<p>TCC 强制要求你将一个业务接口拆分为三个方法。</p>
+<p>代码逻辑：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">interface</span> <span class="hljs-title class_">StockService</span> &#123;<br>    <span class="hljs-comment">// 1. Try: 资源检查 + 预留</span><br>    <span class="hljs-comment">// 并不是直接扣减，而是把库存移入 &quot;frozen_stock&quot; 字段</span><br>    <span class="hljs-meta">@Transactional</span><br>    <span class="hljs-keyword">void</span> <span class="hljs-title function_">tryDeduct</span><span class="hljs-params">(<span class="hljs-type">long</span> id, <span class="hljs-type">int</span> count)</span> &#123;<br>        checkStock(id, count);<br>        stock -= count;<br>        frozen_stock += count; <span class="hljs-comment">// 关键：冻结资源</span><br>    &#125;<br><br>    <span class="hljs-comment">// 2. Confirm: 真正扣减</span><br>    <span class="hljs-comment">// 此时不需要检查库存，直接使用 Try 阶段锁定的资源</span><br>    <span class="hljs-keyword">void</span> <span class="hljs-title function_">confirmDeduct</span><span class="hljs-params">(<span class="hljs-type">long</span> id, <span class="hljs-type">int</span> count)</span> &#123;<br>        frozen_stock -= count; <span class="hljs-comment">// 消耗冻结，真正完成</span><br>    &#125;<br><br>    <span class="hljs-comment">// 3. Cancel: 释放资源</span><br>    <span class="hljs-keyword">void</span> <span class="hljs-title function_">cancelDeduct</span><span class="hljs-params">(<span class="hljs-type">long</span> id, <span class="hljs-type">int</span> count)</span> &#123;<br>        stock += count;        <span class="hljs-comment">// 恢复可用库存</span><br>        frozen_stock -= count; <span class="hljs-comment">// 释放冻结</span><br>    &#125;<br>&#125;<br><br></code></pre></td></tr></table></figure>
+
+<p>TCC 赋予了开发者极大的灵活性，但它将 <strong>复杂性</strong> 完全转嫁给了业务方。在分布式网络环境中，你必须在代码中处理以下三种极端异常，否则会导致资金损失。</p>
+<ol>
+<li><p><strong>空回滚</strong></p>
+<ul>
+<li><p>场景：Try 请求因为网络丢包，根本没发到库存服务。但协调器（TC）认为失败了，触发了 Cancel。</p>
+</li>
+<li><p>后果：Cancel 执行了“退钱&#x2F;释放库存”的操作。如果没做防护，会导致库存凭空增加。</p>
+</li>
+<li><p>对策：Cancel 必须检查“是否收到过 Try”。</p>
+</li>
+</ul>
+</li>
+<li><p><strong>幂等</strong></p>
+<ul>
+<li><p>场景：网络抖动，TC 以为 Confirm 超时了，重发了一次 Confirm。</p>
+</li>
+<li><p>后果：库存被扣了两次。</p>
+</li>
+<li><p>对策：所有 Confirm&#x2F;Cancel 必须实现幂等，处理过的事务 ID 直接返回成功。</p>
+</li>
+</ul>
+</li>
+<li><p><strong>悬挂</strong></p>
+<ul>
+<li>场景：网络极度拥堵。Cancel 比 Try 先到了。Cancel 发现没 Try 过，直接返回成功（空回滚）。随后，迟到的 Try 到了，并执行成功。</li>
+<li>后果：资源被 Try 冻结了，但永远不会被 Confirm 或 Cancel，变成了“僵尸资源”。</li>
+<li>对策：Try 执行时，必须检查该事务 ID 是否已经执行过 Cancel。</li>
+</ul>
+</li>
+</ol>
+<p><strong>结论</strong>：TCC 性能极高（不长期持有数据库锁），但开发和测试成本极高。仅适用于核心资金链路或对并发要求极高的场景。</p>
+<h3 id="Seata-Saga-模式"><a href="#Seata-Saga-模式" class="headerlink" title="Seata Saga 模式"></a>Seata Saga 模式</h3><p>有些业务流程非常长，既不能像 AT 模式那样长时间锁表（导致数据库瘫痪），也不能像 TCC 那样要求每个服务都改造代码。</p>
+<p>你要预订一次欧洲旅行，流程是：<code>订机票</code>  <code>订酒店</code>  <code>租车</code>。这个流程涉及三个不同的供应商，甚至可能需要人工审核，整个过程可能持续几分钟甚至几小时。</p>
+<ul>
+<li><strong>如果用 AT&#x2F;TCC</strong>：从订机票开始，数据库就被锁住了。直到租车成功，机票的锁才释放。这期间，别人无法买这张票。</li>
+</ul>
+<p>核心定义：Saga 模式把一个大事务拆分成多个 <strong>互不相关</strong> 的本地短事务。就像接力赛：</p>
+<ul>
+<li>第一棒（机票）跑完，<strong>立刻提交</strong>，释放锁。</li>
+<li>第二棒（酒店）跑完，<strong>立刻提交</strong>。</li>
+<li>如果第三棒（租车）摔倒了，Saga 协调器会负责往回跑：退酒店（补偿）、退机票（补偿）。</li>
+</ul>
+<p>Saga 的核心在于定义“如何前进”和“如何后退”。开发者需要通过 JSON 或代码定义一个状态机。</p>
+<ul>
+<li><strong>正常情况（All Good）：</strong>（提交）  （提交）  （提交）  <strong>结束</strong></li>
+<li><strong>异常情况（C 失败）：</strong>（提交）  （提交）  （失败）  <strong>触发回滚</strong>  （B 的补偿）  （A 的补偿）</li>
+</ul>
+<p>Saga 是分布式事务中最“反直觉”的模式，因为它打破了 ACID 中的 <strong>I (Isolation，隔离性)</strong>。</p>
+<p>由于缺乏隔离性引发的“脏读。在 Saga 模式中，因为每个子事务都是 <strong>立即提交</strong> 的，所以中间状态对外界是 <strong>可见</strong> 的。</p>
+<ol>
+<li>用户 A 订了最后一张机票（ 提交）。</li>
+<li>用户 B 来查票，发现没票了（看见了 A 的提交）。</li>
+<li>用户 A 后续的酒店预订失败了，触发补偿取消了机票（ 执行）。</li>
+<li><strong>结果</strong>：用户 B 刚才看到的是一个“无效”的状态，且因为这个状态放弃了购买。这就是 <strong>脏读</strong>。</li>
+</ol>
+<p>为了解决这个问题，你通常需要在业务层面引入 <strong>“语义锁” (Semantic Lock)</strong>。</p>
+<ul>
+<li><em>比如</em>：在订机票时，不直接把票减掉，而是将状态改为 <code>BOOKING_PENDING</code>（预订中）。</li>
+<li>只有当整个 Saga 流程全部完成，才把状态改为 <code>CONFIRMED</code>。</li>
+</ul>
+<p><strong>结论</strong>：Saga 适合 <strong>业务流程极长</strong>、<strong>跨机构&#x2F;跨遗留系统</strong>（无法改造代码使用 TCC，只能调用接口）的场景。</p>
+<h3 id="RocketMQ-事务消息"><a href="#RocketMQ-事务消息" class="headerlink" title="RocketMQ 事务消息"></a>RocketMQ 事务消息</h3><p>并不是所有业务都需要“同时成功”。</p>
+<p><strong>场景</strong>：用户支付成功后，需要增加用户积分。</p>
+<p>如果支付成功了，积分服务挂了，用户能不能忍受积分晚 10 秒到账？通常是可以的。</p>
+<p>这就不需要强一致性事务，而是 <strong>最终一致性</strong>。核心思想是：<strong>只要我本地事务成功了，我就保证消息一定能发出去；只要消息发出去了，消费者最终一定能收到。</strong></p>
+<p>普通的 MQ 发送消息是不可靠的：可能消息发出去了，本地数据库回滚了；或者本地数据库提交了，消息发失败了。RocketMQ 引入了 <strong>Half Message（半消息）</strong> 来解决原子性问题。</p>
+<p><strong>核心步骤：</strong></p>
+<ol>
+<li><p><strong>发送半消息</strong>：生产者发一条消息给 MQ，MQ 收到了但不给消费者看（Pending 状态）。</p>
+</li>
+<li><p><strong>执行本地事务</strong>：生产者执行具体的业务（如：更新订单状态）。</p>
+</li>
+<li><p><strong>Commit&#x2F;Rollback</strong>：</p>
+<ul>
+<li><p>本地事务成功  通知 MQ “这条消息可以投递了”。</p>
+</li>
+<li><p>本地事务失败  通知 MQ “把这条消息删了吧”。</p>
+</li>
+</ul>
+</li>
+</ol>
+<p>RocketMQ 方案的精髓在于 <strong>处理“未决”状态</strong>。</p>
+<p>如果在执行本地事务后，服务器立刻断电，没来得及发 Commit 给 MQ，怎么办？</p>
+<p>MQ 里的消息一直是“半消息”状态。RocketMQ 会启动 <strong>回查机制（CheckBack）</strong>。</p>
+<p>MQ 会主动问生产者：“刚才那个事务 ID，你到底执行成功没？”</p>
+<p>生产者需要实现一个检查接口（例如查数据库订单表），确认事务状态并回复。</p>
+<p><strong>本地消息表 (Local Message Table)</strong>：如果你不用 RocketMQ，也可以用“本地消息表”模式。原理一样：在同一个数据库事务里插入业务数据和一条“待发送”的消息记录。然后有一个定时任务不断轮询这张表去发消息。</p>
+<ul>
+<li><strong>代价</strong>：不仅要写业务表，还要写消息表，存在数据库 I&#x2F;O 竞争。</li>
+</ul>
+<p><strong>结论</strong>：这是微服务解耦最常用的方案。它牺牲了实时性（E），换取了高可用（A）和分区容错性（P）。</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E7%B3%BB%E7%BB%9F%E8%AE%BE%E8%AE%A1/" class="category-chain-item">系统设计</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1/" class="print-no-link">#分布式事务</a>
+      
+        <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E6%9E%B6%E6%9E%84/" class="print-no-link">#微服务架构</a>
+      
+        <a href="/tags/CAP%E5%AE%9A%E7%90%86/" class="print-no-link">#CAP定理</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>分布式事务</div>
+      <div>https://gavinmo1.github.io/2026/03/10/分布式事务/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Gavin</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2026年3月10日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by-sa/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by-sa/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="SA - 相同方式共享">
+                    <i class="iconfont icon-cc-sa"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2026/03/10/TCP%E4%B8%8EUDP/" title="TCP与UDP">
+                        <span class="hidden-mobile">TCP与UDP</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"> <span>Hexo</span> </a> <i class="iconfont icon-love"> </i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"> <span>Fluid</span> </a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>
