@@ -234,6 +234,71 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
+        <a href="/2026/03/10/ThreadLocal/" target="_self">
+          ThreadLocal
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2026/03/10/ThreadLocal/" target="_self">
+        <div>
+          ThreadLocal 是 一个用于存储线程私有变量的工具，它 为每个线程维护独立的变量副本，实现线程间数据隔离，避免了多线程并发访问的安全问题；还可在同一线程内完成上下文参数的隐式透传，避免方法间显式传参。 在并发编程中，我们习惯于讨论如何用“锁”来控制对共享资源的访问。但 ThreadLocal 提供了一种完全不同的思路：与其争抢，不如隔离。 ThreadLocal 的 设计初衷并非为了解决多
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2026-03-10 00:37" pubdate>
+              2026-03-10
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/" class="category-chain-item">并发编程</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/%E7%BA%BF%E7%A8%8B%E9%9A%94%E7%A6%BB/">#线程隔离</a>
+            
+              <a href="/tags/%E4%B8%8A%E4%B8%8B%E6%96%87%E4%BC%A0%E9%80%92/">#上下文传递</a>
+            
+              <a href="/tags/%E4%BA%8B%E5%8A%A1%E7%AE%A1%E7%90%86/">#事务管理</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
         <a href="/2026/03/10/%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1/" target="_self">
           分布式事务
         </a>
@@ -250,7 +315,7 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2026-03-10 00:27" pubdate>
+            <time datetime="2026-03-10 00:36" pubdate>
               2026-03-10
             </time>
           </div>
@@ -266,7 +331,7 @@
     
       <span class="category-chain">
         
-  <a href="/categories/%E7%B3%BB%E7%BB%9F%E8%AE%BE%E8%AE%A1/" class="category-chain-item">系统设计</a>
+  <a href="/categories/%E7%B3%BB%E7%BB%9F%E6%9E%B6%E6%9E%84/" class="category-chain-item">系统架构</a>
   
   
 
@@ -283,9 +348,74 @@
             
               <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1/">#分布式事务</a>
             
-              <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E6%9E%B6%E6%9E%84/">#微服务架构</a>
+              <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/">#微服务</a>
             
               <a href="/tags/CAP%E5%AE%9A%E7%90%86/">#CAP定理</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2026/03/10/MySQL%E9%80%BB%E8%BE%91%E6%9E%B6%E6%9E%84%E4%B8%8E%E5%AD%98%E5%82%A8/" target="_self">
+          MySQL逻辑架构与存储
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2026/03/10/MySQL%E9%80%BB%E8%BE%91%E6%9E%B6%E6%9E%84%E4%B8%8E%E5%AD%98%E5%82%A8/" target="_self">
+        <div>
+          MySQL 最本质的特征在于其 逻辑架构与存储实现的完全解耦。这种分层架构决定了 MySQL 的生态灵活性，但也引出了独有的性能挑战与架构权衡。 分层MySQL 的 宏观架构自上而下严格划分为四层，层级间通过标准的 API 接口进行交互。 整体执行流程：客户端请求 → 网络连接层处理 → Server 层解析&#x2F;优化&#x2F;执行 → 存储引擎层做数据读写 → 文件系统层落地磁盘。 各层
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2026-03-10 00:35" pubdate>
+              2026-03-10
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/" class="category-chain-item">数据库</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/MySQL%E6%9E%B6%E6%9E%84/">#MySQL架构</a>
+            
+              <a href="/tags/%E5%AD%98%E5%82%A8%E5%BC%95%E6%93%8E/">#存储引擎</a>
+            
+              <a href="/tags/%E5%88%86%E5%B1%82%E8%AE%BE%E8%AE%A1/">#分层设计</a>
             
           </div>
         
@@ -315,7 +445,7 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2026-03-10 00:27" pubdate>
+            <time datetime="2026-03-10 00:35" pubdate>
               2026-03-10
             </time>
           </div>
@@ -364,204 +494,13 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2026/03/10/Spring%E4%BA%8B%E5%8A%A1%E4%BC%A0%E6%92%AD%E8%A1%8C%E4%B8%BA%E4%B8%8E%E5%A4%B1%E6%95%88%E5%9C%BA%E6%99%AF/" target="_self">
-          Spring事务传播行为与失效场景
-        </a>
-      </h2>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2026/03/10/Spring%E4%BA%8B%E5%8A%A1%E4%BC%A0%E6%92%AD%E8%A1%8C%E4%B8%BA%E4%B8%8E%E5%A4%B1%E6%95%88%E5%9C%BA%E6%99%AF/" target="_self">
-        <div>
-          Spring 的 @Transactional 注解无疑是我们处理数据库事务最得力的助手。然而，在复杂的业务链路下，仅仅知道“加上注解就能回滚”是远远不够的，我们还需要掌握事务的传播行为以及各种隐蔽的失效场景。 @Transactional 是如何工作的要理解事务为何生效、又为何失效，首先必须明白 @Transactional 是如何工作的。 @Transactional 注解的实现高度依赖于 S
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2026-03-10 00:11" pubdate>
-              2026-03-10
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
-            
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/%E5%90%8E%E7%AB%AF%E5%BC%80%E5%8F%91/" class="category-chain-item">后端开发</a>
-  
-  
-
-      </span>
-    
-  
-</span>
-
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/Spring%E4%BA%8B%E5%8A%A1/">#Spring事务</a>
-            
-              <a href="/tags/AOP/">#AOP</a>
-            
-              <a href="/tags/%E5%A4%B1%E6%95%88%E5%9C%BA%E6%99%AF/">#失效场景</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h2 class="index-header">
-        
-        <a href="/2026/03/06/ThreadLocal/" target="_self">
-          ThreadLocal
-        </a>
-      </h2>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2026/03/06/ThreadLocal/" target="_self">
-        <div>
-          ThreadLocal 是 一个用于存储线程私有变量的工具，它 为每个线程维护独立的变量副本，实现线程间数据隔离，避免了多线程并发访问的安全问题；还可在同一线程内完成上下文参数的隐式透传，避免方法间显式传参。 在并发编程中，我们习惯于讨论如何用“锁”来控制对共享资源的访问。但 ThreadLocal 提供了一种完全不同的思路：与其争抢，不如隔离。 ThreadLocal 的 设计初衷并非为了解决多
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2026-03-06 17:42" pubdate>
-              2026-03-06
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
-            
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/%E6%9C%AA%E5%88%86%E7%B1%BB/" class="category-chain-item">未分类</a>
-  
-  
-
-      </span>
-    
-  
-</span>
-
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/%E5%BE%85%E6%95%B4%E7%90%86/">#待整理</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h2 class="index-header">
-        
-        <a href="/2026/03/06/MySQL%E9%80%BB%E8%BE%91%E6%9E%B6%E6%9E%84%E4%B8%8E%E5%AD%98%E5%82%A8/" target="_self">
-          MySQL逻辑架构与存储
-        </a>
-      </h2>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2026/03/06/MySQL%E9%80%BB%E8%BE%91%E6%9E%B6%E6%9E%84%E4%B8%8E%E5%AD%98%E5%82%A8/" target="_self">
-        <div>
-          MySQL 最本质的特征在于其 逻辑架构与存储实现的完全解耦。这种分层架构决定了 MySQL 的生态灵活性，但也引出了独有的性能挑战与架构权衡。 分层MySQL 的 宏观架构自上而下严格划分为四层，层级间通过标准的 API 接口进行交互。 整体执行流程：客户端请求 → 网络连接层处理 → Server 层解析&#x2F;优化&#x2F;执行 → 存储引擎层做数据读写 → 文件系统层落地磁盘。 各层
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2026-03-06 17:41" pubdate>
-              2026-03-06
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
-            
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/" class="category-chain-item">数据库</a>
-  
-  
-
-      </span>
-    
-  
-</span>
-
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/MySQL/">#MySQL</a>
-            
-              <a href="/tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/">#架构设计</a>
-            
-              <a href="/tags/%E5%AD%98%E5%82%A8%E5%BC%95%E6%93%8E/">#存储引擎</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h2 class="index-header">
-        
-        <a href="/2026/03/06/MySQL%E5%B9%B6%E5%8F%91%E5%AE%89%E5%85%A8_%E9%94%81%E4%B8%8EMVCC%E6%9C%BA%E5%88%B6/" target="_self">
+        <a href="/2026/03/10/MySQL%E5%B9%B6%E5%8F%91%E5%AE%89%E5%85%A8_%E9%94%81%E4%B8%8EMVCC%E6%9C%BA%E5%88%B6/" target="_self">
           MySQL并发安全_锁与MVCC机制
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2026/03/06/MySQL%E5%B9%B6%E5%8F%91%E5%AE%89%E5%85%A8_%E9%94%81%E4%B8%8EMVCC%E6%9C%BA%E5%88%B6/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2026/03/10/MySQL%E5%B9%B6%E5%8F%91%E5%AE%89%E5%85%A8_%E9%94%81%E4%B8%8EMVCC%E6%9C%BA%E5%88%B6/" target="_self">
         <div>
           从计算机科学的视角来看，数据库管理系统本质上是一个维护 ACID 特性的状态机。在单线程模型下，状态转换是确定的。然而，一旦引入并发，系统便陷入了混乱。 InnoDB 存储引擎的并发模块主要目的就是 在并发吞吐量与数据一致性之间寻找平衡。这是一个零和博弈——隔离性越高，并发度就越低。 并发带来的问题当多个事务同时操作同一份数据时，如果没有合适的隔离机制，可能会出现以下三种一致性问题：  脏读：一个
         </div>
@@ -571,8 +510,8 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2026-03-06 17:40" pubdate>
-              2026-03-06
+            <time datetime="2026-03-10 00:35" pubdate>
+              2026-03-10
             </time>
           </div>
         
@@ -602,11 +541,11 @@
           <div class="post-meta">
             <i class="iconfont icon-tags"></i>
             
-              <a href="/tags/%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6/">#并发控制</a>
-            
-              <a href="/tags/%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/">#事务隔离级别</a>
+              <a href="/tags/%E9%94%81%E6%9C%BA%E5%88%B6/">#锁机制</a>
             
               <a href="/tags/MVCC/">#MVCC</a>
+            
+              <a href="/tags/%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB/">#事务隔离</a>
             
           </div>
         
@@ -620,13 +559,78 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2026/03/06/MySQL%E6%97%A5%E5%BF%97%E5%85%A8%E8%A7%A3/" target="_self">
+        <a href="/2026/03/10/Spring%E4%BA%8B%E5%8A%A1%E4%BC%A0%E6%92%AD%E8%A1%8C%E4%B8%BA%E4%B8%8E%E5%A4%B1%E6%95%88%E5%9C%BA%E6%99%AF/" target="_self">
+          Spring事务传播行为与失效场景
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2026/03/10/Spring%E4%BA%8B%E5%8A%A1%E4%BC%A0%E6%92%AD%E8%A1%8C%E4%B8%BA%E4%B8%8E%E5%A4%B1%E6%95%88%E5%9C%BA%E6%99%AF/" target="_self">
+        <div>
+          Spring 的 @Transactional 注解无疑是我们处理数据库事务最得力的助手。然而，在复杂的业务链路下，仅仅知道“加上注解就能回滚”是远远不够的，我们还需要掌握事务的传播行为以及各种隐蔽的失效场景。 @Transactional 是如何工作的要理解事务为何生效、又为何失效，首先必须明白 @Transactional 是如何工作的。 @Transactional 注解的实现高度依赖于 S
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2026-03-10 00:35" pubdate>
+              2026-03-10
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Spring%E6%A1%86%E6%9E%B6/" class="category-chain-item">Spring框架</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/%E4%BA%8B%E5%8A%A1%E4%BC%A0%E6%92%AD/">#事务传播</a>
+            
+              <a href="/tags/AOP/">#AOP</a>
+            
+              <a href="/tags/%E4%BA%8B%E5%8A%A1%E5%A4%B1%E6%95%88/">#事务失效</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2026/03/10/MySQL%E6%97%A5%E5%BF%97%E5%85%A8%E8%A7%A3/" target="_self">
           MySQL日志全解
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2026/03/06/MySQL%E6%97%A5%E5%BF%97%E5%85%A8%E8%A7%A3/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2026/03/10/MySQL%E6%97%A5%E5%BF%97%E5%85%A8%E8%A7%A3/" target="_self">
         <div>
           我们的故事从一个简单的 UPDATE 事务开始。 为了在 极致的性能（内存） 和 可靠（磁盘） 之间找到完美的平衡，InnoDB 内部有着一套复杂且环环相扣的机制。  到达引擎层之前还有很多步骤，本篇不涉及  Buffer PoolBuffer Pool 是 InnoDB 在 内存中开辟的一块区域，用来 缓存磁盘上的数据页和索引页。它是 InnoDB 性能的基石。 为什么要有 Buffer Poo
         </div>
@@ -636,8 +640,8 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2026-03-06 14:42" pubdate>
-              2026-03-06
+            <time datetime="2026-03-10 00:35" pubdate>
+              2026-03-10
             </time>
           </div>
         
