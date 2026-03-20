@@ -234,13 +234,13 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2026/03/18/%E6%80%8E%E4%B9%88%E6%90%AD%E5%BB%BA%E4%B8%80%E4%B8%AABlog/" target="_self">
-          怎么搭建一个Blog
+        <a href="/2026/03/18/%E6%80%8E%E4%B9%88%E6%90%AD%E5%BB%BA%E8%BF%99%E4%B8%AABlog/" target="_self">
+          怎么搭建这个Blog
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2026/03/18/%E6%80%8E%E4%B9%88%E6%90%AD%E5%BB%BA%E4%B8%80%E4%B8%AABlog/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2026/03/18/%E6%80%8E%E4%B9%88%E6%90%AD%E5%BB%BA%E8%BF%99%E4%B8%AABlog/" target="_self">
         <div>
           这是一个基于 Hexo + Markdown + GitHub Pages 的个人博客方案，部署成本低、维护简单、主题生态丰富。 在真正动手前，先来看一下整个系统是如何协作的：  Hexo 是一个 静态博客生成器，你只负责写 Markdown 文件，Hexo 会把它们转换成 HTML 页面。 GitHub Pages 是一个 免费静态网站托管服务，负责把生成好的网页放到公网。 主题（如本网站使用的
         </div>
@@ -266,7 +266,7 @@
     
       <span class="category-chain">
         
-  <a href="/categories/%E6%8A%80%E6%9C%AF/" class="category-chain-item">技术</a>
+  <a href="/categories/%E6%8A%80%E6%9C%AF%E6%95%99%E7%A8%8B/" class="category-chain-item">技术教程</a>
   
   
 
@@ -285,7 +285,7 @@
             
               <a href="/tags/GitHub-Pages/">#GitHub Pages</a>
             
-              <a href="/tags/%E5%8D%9A%E5%AE%A2%E6%90%AD%E5%BB%BA/">#博客搭建</a>
+              <a href="/tags/%E9%9D%99%E6%80%81%E5%8D%9A%E5%AE%A2/">#静态博客</a>
             
           </div>
         
@@ -741,6 +741,71 @@
               <a href="/tags/%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8/">#线程安全</a>
             
               <a href="/tags/%E4%B8%8A%E4%B8%8B%E6%96%87%E4%BC%A0%E9%80%92/">#上下文传递</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2025/12/02/Redis%E5%8D%95%E7%BA%BF%E7%A8%8B%E4%BA%8B%E4%BB%B6%E5%BE%AA%E7%8E%AFIO%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8%E6%9E%B6%E6%9E%84/" target="_self">
+          Redis单线程事件循环IO多路复用架构
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2025/12/02/Redis%E5%8D%95%E7%BA%BF%E7%A8%8B%E4%BA%8B%E4%BB%B6%E5%BE%AA%E7%8E%AFIO%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8%E6%9E%B6%E6%9E%84/" target="_self">
+        <div>
+          在探讨 Redis 的并发模型前，必须明确其所处的物理环境：这是一个 纯内存数据库。 现代 CPU 访问一次一级缓存（L1 Cache）的时间约 1 纳秒，访问一次主存（RAM）的时间约 100 纳秒。而一次同城机房的千兆网络 RTT（往返延迟）大约在 500 微秒（500,000 纳秒）。 这意味着，CPU 计算和内存读写的速度，与网络报文到达网卡的速度之间，存在数千倍的鸿沟。 因此对于 Red
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2025-12-02 12:20" pubdate>
+              2025-12-02
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/" class="category-chain-item">数据库</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/Redis/">#Redis</a>
+            
+              <a href="/tags/I-O%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/">#I/O多路复用</a>
+            
+              <a href="/tags/%E4%BA%8B%E4%BB%B6%E9%A9%B1%E5%8A%A8/">#事件驱动</a>
             
           </div>
         
