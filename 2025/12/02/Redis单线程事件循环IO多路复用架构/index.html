@@ -27,7 +27,7 @@
 <meta property="og:description" content="在探讨 Redis 的并发模型前，必须明确其所处的物理环境：这是一个 纯内存数据库。 现代 CPU 访问一次一级缓存（L1 Cache）的时间约 1 纳秒，访问一次主存（RAM）的时间约 100 纳秒。而一次同城机房的千兆网络 RTT（往返延迟）大约在 500 微秒（500,000 纳秒）。 这意味着，CPU 计算和内存读写的速度，与网络报文到达网卡的速度之间，存在数千倍的鸿沟。 因此对于 Red">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2025-12-02T04:20:12.000Z">
-<meta property="article:modified_time" content="2026-04-17T13:27:38.149Z">
+<meta property="article:modified_time" content="2026-04-17T13:46:10.847Z">
 <meta property="article:author" content="Gavin">
 <meta property="article:tag" content="I&#x2F;O多路复用">
 <meta property="article:tag" content="Redis">
