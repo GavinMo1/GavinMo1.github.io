@@ -16,21 +16,40 @@
   50% { opacity: 0; }
 }
 
-/* 精选徽章：首页标题旁、归档列表标题旁 */
+/* 精选徽章：克制的轮廓 + 细星号，贴近正文基线，不抢标题 */
 .post-featured-badge {
   display: inline-block;
-  margin-left: 0.5em;
-  padding: 0.12em 0.6em;
-  font-size: 0.55em;
-  font-weight: 600;
-  line-height: 1.4;
-  color: #fff;
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-  border-radius: 4px;
+  margin-left: 0.55em;
+  padding: 0.08em 0.55em;
+  font-size: 0.52em;
+  font-weight: 500;
+  line-height: 1.55;
+  color: #b08a3e;
+  background: rgba(176, 138, 62, 0.06);
+  border: 1px solid rgba(176, 138, 62, 0.35);
+  border-radius: 3px;
   vertical-align: middle;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  transform: translateY(-0.15em);
+  transition: color .2s, border-color .2s, background .2s;
+}
+
+.post-featured-badge::before {
+  content: "\2726";                   /* ✦ 细六芒星 */
+  margin-right: 0.35em;
+  font-size: 0.95em;
+  opacity: 0.85;
 }
 
 .list-group-item .post-featured-badge {
-  font-size: 0.75em;
+  font-size: 0.72em;
+}
+
+/* 深色模式下柔化一下，避免过亮 */
+html[data-user-color-scheme="dark"] .post-featured-badge,
+body.dark .post-featured-badge {
+  color: #c9a875;
+  background: rgba(201, 168, 117, 0.08);
+  border-color: rgba(201, 168, 117, 0.32);
 }

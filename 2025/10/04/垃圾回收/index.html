@@ -1,0 +1,827 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.ico">
+  <link rel="icon" href="/img/favicon-v2.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Gavin">
+  <meta name="keywords" content="Computer Science">
+  
+    <meta name="description" content="JVM 的垃圾回收（Garbage Collection, GC）机制是 Java 语言的核心优势之一。它将程序员从手动管理内存的繁琐工作中解放出来，通过自动识别并回收不再被程序使用的对象，防止内存泄漏和野指针问题，保证内存资源的可持续使用。 核心理论基础为什么要进行垃圾回收在程序运行过程中，堆内存会被不断创建的对象填充。如果没有清理机制，堆内存最终会被耗尽，导致 OutOfMemoryError">
+<meta property="og:type" content="article">
+<meta property="og:title" content="垃圾回收">
+<meta property="og:url" content="https://gavinmo1.github.io/2025/10/04/%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6/index.html">
+<meta property="og:site_name" content="开发札记">
+<meta property="og:description" content="JVM 的垃圾回收（Garbage Collection, GC）机制是 Java 语言的核心优势之一。它将程序员从手动管理内存的繁琐工作中解放出来，通过自动识别并回收不再被程序使用的对象，防止内存泄漏和野指针问题，保证内存资源的可持续使用。 核心理论基础为什么要进行垃圾回收在程序运行过程中，堆内存会被不断创建的对象填充。如果没有清理机制，堆内存最终会被耗尽，导致 OutOfMemoryError">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2025-10-04T07:03:25.000Z">
+<meta property="article:modified_time" content="2026-04-17T13:37:48.269Z">
+<meta property="article:author" content="Gavin">
+<meta property="article:tag" content="待整理">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>垃圾回收 - 开发札记</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+  
+<link rel="stylesheet" href="/css/custom.css">
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"gavinmo1.github.io","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"|","loop":false,"scope":["home"]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>开发札记</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/featured/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>精选</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/dream.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle">垃圾回收</span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2025-10-04 15:03" pubdate>
+          2025年10月4日 下午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          2.4k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          21 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">垃圾回收</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <p>JVM 的垃圾回收（Garbage Collection, GC）机制是 Java 语言的核心优势之一。它将程序员从手动管理内存的繁琐工作中解放出来，通过自动识别并回收不再被程序使用的对象，防止内存泄漏和野指针问题，保证内存资源的可持续使用。</p>
+<h2 id="核心理论基础"><a href="#核心理论基础" class="headerlink" title="核心理论基础"></a>核心理论基础</h2><h3 id="为什么要进行垃圾回收"><a href="#为什么要进行垃圾回收" class="headerlink" title="为什么要进行垃圾回收"></a>为什么要进行垃圾回收</h3><p>在程序运行过程中，堆内存会被不断创建的对象填充。如果没有清理机制，堆内存最终会被耗尽，导致 <code>OutOfMemoryError</code>。GC 的核心任务就是自动化地回收那些不再被任何引用持有的“死亡”对象。</p>
+<p>在此过程中，需要区分两个关键概念：</p>
+<ul>
+<li><strong>内存溢出 (Out Of Memory)</strong>：指程序申请内存时，没有足够的空间供其使用。这通常是因为堆空间过小或加载了过多的数据。</li>
+<li><strong>内存泄漏 (Memory Leak)</strong>：指对象已经不再被程序逻辑所需要，但由于它们仍然被某些 GC Roots 引用链持有，导致 GC 无法将其回收。长期的内存泄漏最终会导致内存溢出。</li>
+</ul>
+<h3 id="判定对象存活的算法"><a href="#判定对象存活的算法" class="headerlink" title="判定对象存活的算法"></a>判定对象存活的算法</h3><h4 id="1-引用计数法-Reference-Counting"><a href="#1-引用计数法-Reference-Counting" class="headerlink" title="1. 引用计数法 (Reference Counting)"></a>1. 引用计数法 (Reference Counting)</h4><p>给对象添加一个计数器，有引用加 1，引用失效减 1。</p>
+<ul>
+<li><strong>缺陷</strong>：无法解决 <strong>循环引用</strong> 问题（例如 A 引用 B，B 引用 A，除此之外无其他引用）。</li>
+<li><strong>结论</strong>：主流 Java 虚拟机 <strong>未采用</strong> 此算法。</li>
+</ul>
+<h4 id="2-可达性分析-Reachability-Analysis"><a href="#2-可达性分析-Reachability-Analysis" class="headerlink" title="2. 可达性分析 (Reachability Analysis)"></a>2. 可达性分析 (Reachability Analysis)</h4><p>这是现代 JVM 采用的标准算法。算法以一系列被称为 <strong>“GC Roots”</strong> 的对象作为起点，向下搜索引用链。</p>
+<ul>
+<li><strong>存活</strong>：能被 GC Roots 直接或间接关联到的对象。</li>
+<li><strong>垃圾</strong>：从 GC Roots 不可达的对象。</li>
+</ul>
+<p><strong>常见的 GC Roots 包括：</strong></p>
+<ul>
+<li><strong>虚拟机栈</strong> 中引用的对象（局部变量）。</li>
+<li><strong>方法区</strong> 中类静态属性引用的对象（static 变量）。</li>
+<li><strong>方法区</strong> 中常量引用的对象（如字符串常量池）。</li>
+<li><strong>本地方法栈</strong> 中 JNI（Native 方法）引用的对象。</li>
+<li><strong>所有存活的线程</strong> 对象。</li>
+<li>被 <code>synchronized</code> 锁持有的对象。</li>
+</ul>
+<h3 id="分代假说-Generational-Hypothesis"><a href="#分代假说-Generational-Hypothesis" class="headerlink" title="分代假说 (Generational Hypothesis)"></a>分代假说 (Generational Hypothesis)</h3><p>HotSpot 虚拟机的设计基于两大假说，这决定了堆内存的划分方式：</p>
+<ol>
+<li><strong>弱分代假说</strong>：绝大多数对象（约 90% 以上）都是“朝生夕死”的。</li>
+<li><strong>强分代假说</strong>：熬过越多次垃圾收集过程的对象，就越难以消亡。</li>
+</ol>
+<h2 id="内存区域与分代结构"><a href="#内存区域与分代结构" class="headerlink" title="内存区域与分代结构"></a>内存区域与分代结构</h2><p>基于分代假说，JVM 将堆内存划分为不同的区域，以便对不同生命周期的对象采用最高效的收集算法。</p>
+<h3 id="1-年轻代-Young-Generation"><a href="#1-年轻代-Young-Generation" class="headerlink" title="1. 年轻代 (Young Generation)"></a>1. 年轻代 (Young Generation)</h3><ul>
+<li><strong>特点</strong>：存放新创建的对象，对象存活率极低。</li>
+<li><strong>结构</strong>：分为 <strong>Eden 区</strong> 和两个 <strong>Survivor 区</strong>（From&#x2F;To）。默认比例为 Eden: S0: S1 &#x3D; 8:1:1。</li>
+<li><strong>回收行为</strong>：发生在这里的 GC 称为 <strong>Minor GC</strong> (Young GC)。由于对象大多死亡，回收效率极高。</li>
+</ul>
+<h3 id="2-老年代-Old-Generation"><a href="#2-老年代-Old-Generation" class="headerlink" title="2. 老年代 (Old Generation)"></a>2. 老年代 (Old Generation)</h3><ul>
+<li><strong>特点</strong>：存放生命周期长或体积特别大的对象。</li>
+<li><strong>回收行为</strong>：对象存活率高，没有额外的空间进行分配担保，因此不适合复制算法。发生在这里的 GC 通常称为 <strong>Major GC</strong>（注意：该术语常与 Full GC 混用）。</li>
+</ul>
+<h3 id="3-方法区-Method-Area"><a href="#3-方法区-Method-Area" class="headerlink" title="3. 方法区 (Method Area)"></a>3. 方法区 (Method Area)</h3><p>存储类元信息、常量、静态变量等。</p>
+<ul>
+<li><strong>JDK 8 之前 (永久代 PermGen)</strong>：位于堆内存中，有固定大小限制，容易出现 <code>OutOfMemoryError: PermGen space</code>。</li>
+<li><strong>JDK 8 及之后 (元空间 Metaspace)</strong>：改为使用 <strong>本地内存 (Native Memory)</strong>。默认大小仅受限于物理内存，从根本上解决了 PermGen 的 OOM 问题，并简化了 Full GC 的复杂度。</li>
+</ul>
+<h2 id="核心垃圾回收算法"><a href="#核心垃圾回收算法" class="headerlink" title="核心垃圾回收算法"></a>核心垃圾回收算法</h2><h3 id="1-标记-清除-Mark-Sweep"><a href="#1-标记-清除-Mark-Sweep" class="headerlink" title="1. 标记-清除 (Mark-Sweep)"></a>1. 标记-清除 (Mark-Sweep)</h3><ul>
+<li><strong>原理</strong>：先标记出所有存活对象，然后统一回收未标记对象。</li>
+<li><strong>缺点</strong>：<ul>
+<li><strong>效率低</strong>：标记和清除两个过程效率都不高。</li>
+<li><strong>内存碎片</strong>：清除后会产生大量不连续的内存碎片，可能导致后续分配大对象时因无法找到连续空间而触发 GC。</li>
+</ul>
+</li>
+<li><strong>应用</strong>：CMS 收集器。</li>
+</ul>
+<h3 id="2-标记-复制-Copying"><a href="#2-标记-复制-Copying" class="headerlink" title="2. 标记-复制 (Copying)"></a>2. 标记-复制 (Copying)</h3><ul>
+<li><strong>原理</strong>：将内存分为两块，每次只用其中一块。回收时，将存活对象复制到另一块，然后清空当前块。</li>
+<li><strong>优点</strong>：实现简单，运行高效，<strong>无内存碎片</strong>。</li>
+<li><strong>缺点</strong>：内存利用率低（浪费一半空间）。</li>
+<li><strong>优化</strong>：在年轻代中，由于存活率低，不需要 1:1 划分。而是使用 Eden + Survivor 的设计，只浪费 10% (一个 Survivor) 的空间。</li>
+<li><strong>应用</strong>：所有收集器的 <strong>年轻代</strong> 回收。</li>
+</ul>
+<h3 id="3-标记-整理-Mark-Compact"><a href="#3-标记-整理-Mark-Compact" class="headerlink" title="3. 标记-整理 (Mark-Compact)"></a>3. 标记-整理 (Mark-Compact)</h3><ul>
+<li><strong>原理</strong>：标记完成后，让所有存活对象向一端移动，然后清理掉边界以外的内存。</li>
+<li><strong>优点</strong>：无内存碎片，且不需要浪费内存空间。</li>
+<li><strong>缺点</strong>：移动对象需要 <strong>Stop-The-World (STW)</strong>，开销较大。</li>
+<li><strong>应用</strong>：Serial Old, Parallel Old。</li>
+</ul>
+<h2 id="对象的分配与晋升策略"><a href="#对象的分配与晋升策略" class="headerlink" title="对象的分配与晋升策略"></a>对象的分配与晋升策略</h2><p>对象主要分配在 Eden 区，如果启动了 TLAB（本地线程分配缓冲），则优先在 TLAB 上分配。当 Eden 区空间不足时，触发 Minor GC。</p>
+<p><strong>对象晋升到老年代的途径：</strong></p>
+<ol>
+<li><strong>长期存活的对象</strong>：对象在 Survivor 区每熬过一次 Minor GC，年龄 +1。当年龄达到阈值（默认 15，由 <code>-XX:MaxTenuringThreshold</code> 控制）时晋升。</li>
+<li><strong>大对象直接进入老年代</strong>：通过 <code>-XX:PretenureSizeThreshold</code> 参数设置。超过该大小的对象直接在老年代分配，避免在 Eden 和 Survivor 之间发生大量的内存复制。</li>
+<li><strong>动态年龄判定</strong>：如果在 Survivor 空间中，相同年龄所有对象大小的总和大于 Survivor 空间的一半，则年龄大于或等于该年龄的对象可以直接进入老年代，无需等到阈值。</li>
+<li><strong>空间分配担保</strong>：Minor GC 后，如果存活对象过多，Survivor 区放不下，这些对象会通过分配担保机制直接进入老年代。如果老年代也放不下，则可能触发 Full GC。</li>
+</ol>
+<h2 id="垃圾收集器的演进"><a href="#垃圾收集器的演进" class="headerlink" title="垃圾收集器的演进"></a>垃圾收集器的演进</h2><p>GC 的演进目标始终是：在保证吞吐量的前提下，尽可能减少 <strong>Stop-The-World (STW)</strong> 的时间。</p>
+<h3 id="1-Serial-收集器-单线程"><a href="#1-Serial-收集器-单线程" class="headerlink" title="1. Serial 收集器 (单线程)"></a>1. Serial 收集器 (单线程)</h3><ul>
+<li><strong>特点</strong>：最古老、最简单。GC 时必须暂停所有用户线程，单线程执行。</li>
+<li><strong>组合</strong>：Serial (Copying) + Serial Old (Mark-Compact)。</li>
+<li><strong>适用</strong>：Client 模式、单核、小内存环境。</li>
+</ul>
+<h3 id="2-Parallel-收集器-吞吐量优先"><a href="#2-Parallel-收集器-吞吐量优先" class="headerlink" title="2. Parallel 收集器 (吞吐量优先)"></a>2. Parallel 收集器 (吞吐量优先)</h3><ul>
+<li><strong>特点</strong>：Serial 的多线程版本。关注 <strong>吞吐量</strong>（用户代码运行时间 &#x2F; 总时间）。支持自适应调节策略 (<code>-XX:+UseAdaptiveSizePolicy</code>)。</li>
+<li><strong>组合</strong>：Parallel Scavenge + Parallel Old。</li>
+<li><strong>地位</strong>：JDK 8 Server 模式下的默认 GC。</li>
+<li><strong>适用</strong>：后台计算、批处理任务等对交互延迟不敏感的场景。</li>
+</ul>
+<h3 id="3-CMS-Concurrent-Mark-Sweep-低延迟探索"><a href="#3-CMS-Concurrent-Mark-Sweep-低延迟探索" class="headerlink" title="3. CMS (Concurrent Mark Sweep) (低延迟探索)"></a>3. CMS (Concurrent Mark Sweep) (低延迟探索)</h3><ul>
+<li><strong>特点</strong>：第一款并发收集器，目标是 <strong>最短回收停顿时间</strong>。基于 <strong>标记-清除</strong> 算法。</li>
+<li><strong>工作阶段</strong>：<ol>
+<li><strong>初始标记</strong> (STW)：标记 GC Roots 直接关联的对象。</li>
+<li><strong>并发标记</strong>：并发遍历对象图。</li>
+<li><strong>重新标记</strong> (STW)：修正并发期间变动的标记。</li>
+<li><strong>并发清除</strong>：并发清除垃圾。</li>
+</ol>
+</li>
+<li><strong>三大缺陷</strong>：<ol>
+<li><strong>内存碎片</strong>：可能导致大对象分配困难。</li>
+<li><strong>浮动垃圾</strong>：并发清除阶段产生的垃圾需等到下次 GC 清理。</li>
+<li><strong>并发失败 (Concurrent Mode Failure)</strong>：如果回收速度跟不上分配速度，会退化为 Serial Old (单线程 Full GC)，导致长时间卡顿。</li>
+</ol>
+</li>
+<li><strong>现状</strong>：JDK 9 废弃，JDK 14 移除。</li>
+</ul>
+<h3 id="4-G1-Garbage-First-区域化变革"><a href="#4-G1-Garbage-First-区域化变革" class="headerlink" title="4. G1 (Garbage-First) (区域化变革)"></a>4. G1 (Garbage-First) (区域化变革)</h3><ul>
+<li><strong>特点</strong>：<strong>JDK 9+ 默认 GC</strong>。将堆划分为多个独立的 <strong>Region</strong>。</li>
+<li><strong>核心机制</strong>：<ul>
+<li><strong>Region 布局</strong>：打破物理分代，每个 Region 动态扮演 Eden、Survivor 或 Old 角色。</li>
+<li><strong>可预测停顿</strong>：用户设定目标停顿时间 (<code>-XX:MaxGCPauseMillis</code>)，G1 优先回收收益最大（垃圾最多）的 Region。</li>
+<li><strong>SATB 算法</strong>：并发标记阶段使用“原始快照”技术，相比 CMS 的增量更新更高效。</li>
+<li><strong>Humongous Region</strong>：专门存储巨型对象。</li>
+</ul>
+</li>
+<li><strong>回收模式</strong>：<ul>
+<li><strong>Young GC</strong>：回收所有 Eden&#x2F;Survivor Region。</li>
+<li><strong>Mixed GC</strong>：回收所有 Young Region + <strong>部分</strong> 收益高的 Old Region。这是 G1 避免全堆扫描的关键。</li>
+<li><strong>Full GC</strong>：兜底方案。JDK 10 之前是单线程，JDK 10+ 优化为并行。</li>
+</ul>
+</li>
+<li><strong>适用</strong>：大内存 (6GB+)、对延迟有要求的服务端应用。</li>
+</ul>
+<h3 id="5-ZGC-Shenandoah-低延迟新纪元"><a href="#5-ZGC-Shenandoah-低延迟新纪元" class="headerlink" title="5. ZGC &amp; Shenandoah (低延迟新纪元)"></a>5. ZGC &amp; Shenandoah (低延迟新纪元)</h3><ul>
+<li><strong>目标</strong>：在 TB 级堆内存下，将停顿时间控制在 <strong>10ms 以内</strong> (甚至 &lt; 1ms)。</li>
+<li><strong>核心突破</strong>：实现了 <strong>并发整理</strong>（对象移动时不需要 STW）。<ul>
+<li><strong>ZGC</strong>：使用 <strong>着色指针 (Colored Pointers)</strong> 和 <strong>读屏障 (Read Barriers)</strong>。</li>
+<li><strong>Shenandoah</strong>：使用 <strong>转发指针 (Forwarding Pointers)</strong>。</li>
+</ul>
+</li>
+<li><strong>特点</strong>：停顿时间不随堆大小增长。</li>
+</ul>
+<h2 id="关键概念解析：Full-GC"><a href="#关键概念解析：Full-GC" class="headerlink" title="关键概念解析：Full GC"></a>关键概念解析：Full GC</h2><p>Full GC 是指清理整个堆（年轻代 + 老年代）和方法区的过程，通常伴随着较长的 STW，是调优中需要重点避免的。</p>
+<p><strong>主要触发时机</strong>：</p>
+<ol>
+<li><strong>老年代空间不足</strong>：晋升失败或大对象分配。</li>
+<li><strong>方法区（元空间）不足</strong>：加载类过多。</li>
+<li><strong>CMS&#x2F;G1 并发失败</strong>：垃圾回收速度赶不上对象分配速度。</li>
+<li><strong>显式调用 <code>System.gc()</code></strong>：代码中手动请求（强烈不建议）。</li>
+<li><strong>空间分配担保失败</strong>：Minor GC 时 Survivor 放不下，且老年代也放不下。</li>
+</ol>
+<h2 id="总结与选型指南"><a href="#总结与选型指南" class="headerlink" title="总结与选型指南"></a>总结与选型指南</h2><table>
+<thead>
+<tr>
+<th align="left">收集器</th>
+<th align="left">核心特点</th>
+<th align="left">适用场景</th>
+<th align="left">JDK 版本建议</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><strong>Serial</strong></td>
+<td align="left">单线程，简单</td>
+<td align="left">客户端，微型内存</td>
+<td align="left">不推荐用于服务端</td>
+</tr>
+<tr>
+<td align="left"><strong>Parallel</strong></td>
+<td align="left"><strong>吞吐量优先</strong></td>
+<td align="left">后台计算，批处理</td>
+<td align="left">JDK 8 默认</td>
+</tr>
+<tr>
+<td align="left"><strong>G1</strong></td>
+<td align="left"><strong>平衡型</strong>，可控延迟</td>
+<td align="left">Web 应用，大内存</td>
+<td align="left"><strong>JDK 9&#x2F;11&#x2F;17 默认，主流推荐</strong></td>
+</tr>
+<tr>
+<td align="left"><strong>ZGC</strong></td>
+<td align="left"><strong>极低延迟</strong> (&lt; 10ms)</td>
+<td align="left">超大堆，金融&#x2F;游戏</td>
+<td align="left">JDK 11+ 可选，JDK 17+ 成熟</td>
+</tr>
+</tbody></table>
+<ul>
+<li>如果你的应用追求 <strong>高吞吐量</strong>（如报表生成），不在乎偶尔的卡顿，选 <strong>Parallel GC</strong>。</li>
+<li>如果你的应用是 <strong>Web 服务</strong>，需要稳定的响应时间，且内存较大（4G+），首选 <strong>G1 GC</strong>。</li>
+<li>如果你管理着 <strong>超大内存</strong>（32G+）且对延迟极度敏感，尝试 <strong>ZGC</strong>。</li>
+</ul>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%9C%AA%E5%88%86%E7%B1%BB/" class="category-chain-item">未分类</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/%E5%BE%85%E6%95%B4%E7%90%86/" class="print-no-link">#待整理</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>垃圾回收</div>
+      <div>https://gavinmo1.github.io/2025/10/04/垃圾回收/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Gavin</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2025年10月4日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by-sa/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by-sa/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="SA - 相同方式共享">
+                    <i class="iconfont icon-cc-sa"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2025/11/22/%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1/" title="分布式事务">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">分布式事务</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"> <span>Hexo</span> </a> <i class="iconfont icon-love"> </i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"> <span>Fluid</span> </a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>
