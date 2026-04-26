@@ -53,3 +53,132 @@ body.dark .post-featured-badge {
   background: rgba(201, 168, 117, 0.08);
   border-color: rgba(201, 168, 117, 0.32);
 }
+
+.about-panel {
+  margin-bottom: 1.8rem;
+  padding: 1.1rem 1.25rem;
+  background: linear-gradient(135deg, rgba(56, 89, 138, 0.08), rgba(56, 89, 138, 0.03));
+  border: 1px solid rgba(56, 89, 138, 0.12);
+  border-radius: 14px;
+}
+
+.about-lead,
+.about-sublead {
+  margin: 0;
+}
+
+.about-sublead {
+  margin-top: 0.65rem;
+  color: rgba(60, 72, 88, 0.82);
+}
+
+.about-stack-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+  margin: 1.5rem 0 2rem;
+}
+
+.about-stack-card {
+  padding: 0.95rem 1rem;
+  background: #fff;
+  border: 1px solid rgba(31, 35, 40, 0.08);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(31, 35, 40, 0.05);
+}
+
+.about-stack-card strong,
+.about-stack-card span {
+  display: block;
+}
+
+.about-stack-card span {
+  margin-top: 0.3rem;
+  font-size: 0.92rem;
+  color: #5b6573;
+}
+
+.about-guide-intro {
+  margin: 1rem 0 1.2rem;
+  padding: 0.9rem 1rem;
+  border-left: 4px solid #4c6ef5;
+  background: rgba(76, 110, 245, 0.06);
+  border-radius: 8px;
+}
+
+.about-guide-intro p {
+  margin: 0;
+}
+
+.about-guide-block,
+.about-guide-inner {
+  margin: 1rem 0;
+  padding: 0.9rem 1rem;
+  background: #fff;
+  border: 1px solid rgba(31, 35, 40, 0.08);
+  border-radius: 12px;
+}
+
+.about-guide-block > summary,
+.about-guide-inner > summary {
+  cursor: pointer;
+  font-weight: 600;
+  list-style: none;
+}
+
+.about-guide-block > summary::-webkit-details-marker,
+.about-guide-inner > summary::-webkit-details-marker {
+  display: none;
+}
+
+.about-guide-block > summary::before,
+.about-guide-inner > summary::before {
+  content: "+";
+  display: inline-block;
+  width: 1.2rem;
+  color: #4c6ef5;
+  font-weight: 700;
+}
+
+.about-guide-block[open] > summary::before,
+.about-guide-inner[open] > summary::before {
+  content: "−";
+}
+
+html[data-user-color-scheme="dark"] .about-panel,
+body.dark .about-panel {
+  background: linear-gradient(135deg, rgba(143, 177, 255, 0.12), rgba(143, 177, 255, 0.04));
+  border-color: rgba(143, 177, 255, 0.16);
+}
+
+html[data-user-color-scheme="dark"] .about-sublead,
+body.dark .about-sublead {
+  color: rgba(226, 232, 240, 0.76);
+}
+
+html[data-user-color-scheme="dark"] .about-stack-card,
+html[data-user-color-scheme="dark"] .about-guide-block,
+html[data-user-color-scheme="dark"] .about-guide-inner,
+body.dark .about-stack-card,
+body.dark .about-guide-block,
+body.dark .about-guide-inner {
+  background: rgba(17, 24, 39, 0.72);
+  border-color: rgba(148, 163, 184, 0.12);
+  box-shadow: none;
+}
+
+html[data-user-color-scheme="dark"] .about-stack-card span,
+body.dark .about-stack-card span {
+  color: rgba(226, 232, 240, 0.72);
+}
+
+html[data-user-color-scheme="dark"] .about-guide-intro,
+body.dark .about-guide-intro {
+  background: rgba(76, 110, 245, 0.14);
+}
+
+@media (max-width: 767px) {
+  .about-stack-grid {
+    grid-template-columns: 1fr;
+  }
+}
