@@ -246,72 +246,6 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2026/03/18/%E6%80%8E%E4%B9%88%E6%90%AD%E5%BB%BA%E8%BF%99%E4%B8%AABlog/" target="_self">
-          怎么搭建这个Blog
-        </a>
-        
-      </h2>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2026/03/18/%E6%80%8E%E4%B9%88%E6%90%AD%E5%BB%BA%E8%BF%99%E4%B8%AABlog/" target="_self">
-        <div>
-          这是一个基于 Hexo + Markdown + GitHub Pages 的个人博客方案，部署成本低、维护简单、主题生态丰富。 在真正动手前，先来看一下整个系统是如何协作的：  Hexo 是一个 静态博客生成器，你只负责写 Markdown 文件，Hexo 会把它们转换成 HTML 页面。 GitHub Pages 是一个 免费静态网站托管服务，负责把生成好的网页放到公网。 主题（如本网站使用的
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2026-03-18 22:00" pubdate>
-              2026-03-18
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
-            
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/%E6%8A%80%E6%9C%AF%E6%95%99%E7%A8%8B/" class="category-chain-item">技术教程</a>
-  
-  
-
-      </span>
-    
-  
-</span>
-
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/Hexo/">#Hexo</a>
-            
-              <a href="/tags/GitHub-Pages/">#GitHub Pages</a>
-            
-              <a href="/tags/%E5%8D%9A%E5%AE%A2%E6%90%AD%E5%BB%BA/">#博客搭建</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h2 class="index-header">
-        
         <a href="/2026/03/09/Spring%E4%BA%8B%E5%8A%A1%E4%BC%A0%E6%92%AD%E8%A1%8C%E4%B8%BA%E4%B8%8E%E5%A4%B1%E6%95%88%E5%9C%BA%E6%99%AF/" target="_self">
           Spring事务传播行为与失效场景
         </a>
@@ -459,7 +393,7 @@
       
       <a class="index-excerpt index-excerpt__noimg" href="/2026/02/12/TCP%E4%B8%8EUDP/" target="_self">
         <div>
-          TCP 与 UDP想象你正在开发一个实时对战游戏。当玩家按下“开火”键时，数据必须毫秒级到达服务器。如果网络稍微抖动，你希望发生什么？  游戏卡住，等待 2 秒，直到这个“开火”指令确认送达，然后画面瞬间快进。 丢弃这个指令，画面保持流畅，玩家可能只是觉得刚才没打中。  显然后者体验更好。 但在另一个场景，当你从银行下载电子账单时，如果底层发生丢包导致文件损坏或解析出极度荒谬的金额，这是绝对不可接
+          TCP 与 UDP假如你正在开发一个实时对战游戏。当玩家按下“开火”键时，数据会在毫秒级到达服务器。此时网络抖动，你希望发生什么？  游戏卡住，等待两秒，直到这个“开火”指令确认送达，然后画面瞬间快进。 丢弃这个指令，画面保持流畅，玩家觉得刚才没打中。  显然后者体验更好。 但在另一个场景，当你从银行下载电子账单时，如果底层发生丢包导致文件损坏或解析出极度荒谬的金额，这是绝对不可接受的。 这就是网
         </div>
       </a>
 
@@ -914,13 +848,73 @@
     </article>
   </div>
 
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2025/10/04/%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6/" target="_self">
+          垃圾回收
+        </a>
+        
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2025/10/04/%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6/" target="_self">
+        <div>
+          JVM 的垃圾回收（Garbage Collection, GC）机制是 Java 语言的核心优势之一。它将程序员从手动管理内存的繁琐工作中解放出来，通过自动识别并回收不再被程序使用的对象，防止内存泄漏和野指针问题，保证内存资源的可持续使用。 核心理论基础为什么要进行垃圾回收在程序运行过程中，堆内存会被不断创建的对象填充。如果没有清理机制，堆内存最终会被耗尽，导致 OutOfMemoryError
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2025-10-04 15:03" pubdate>
+              2025-10-04
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Java/" class="category-chain-item">Java</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/JVM/">#JVM</a>
+            
+              <a href="/tags/%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6/">#垃圾回收</a>
+            
+              <a href="/tags/%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/">#内存管理</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
 
 
-  <nav aria-label="navigation">
-    <span class="pagination" id="pagination">
-      <span class="page-number current">1</span><a class="page-number" href="/page/2/#board">2</a><a class="extend next" rel="next" href="/page/2/#board"><i class="iconfont icon-arrowright"></i></a>
-    </span>
-  </nav>
 
 
 
