@@ -1,0 +1,1050 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.ico">
+  <link rel="icon" href="/img/favicon-v2.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Gavin">
+  <meta name="keywords" content="Computer Science">
+  
+    <meta name="description" content="在单体应用中，Spring 加上 @Transactional 注解，数据库就会保证：要么全做，要么全不做。 但拆分成微服务后，跨服务的调用不再受数据库事务保护。 以电商系统为例，用户点击“下单”按钮，后台会发生两个动作：  订单服务：在订单库创建一条订单记录。 库存服务：在库存库扣减一个商品库存。  在微服务架构下，这是两个跨网络的独立调用。订单创建成功了但库存扣减超时，或者库存扣减成功了但订单">
+<meta property="og:type" content="article">
+<meta property="og:title" content="分布式事务">
+<meta property="og:url" content="https://gavinmo1.github.io/2026/06/21/%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1/index.html">
+<meta property="og:site_name" content="开发札记">
+<meta property="og:description" content="在单体应用中，Spring 加上 @Transactional 注解，数据库就会保证：要么全做，要么全不做。 但拆分成微服务后，跨服务的调用不再受数据库事务保护。 以电商系统为例，用户点击“下单”按钮，后台会发生两个动作：  订单服务：在订单库创建一条订单记录。 库存服务：在库存库扣减一个商品库存。  在微服务架构下，这是两个跨网络的独立调用。订单创建成功了但库存扣减超时，或者库存扣减成功了但订单">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-06-21T06:31:42.000Z">
+<meta property="article:modified_time" content="2026-08-12T08:01:21.419Z">
+<meta property="article:author" content="Gavin">
+<meta property="article:tag" content="分布式事务">
+<meta property="article:tag" content="微服务">
+<meta property="article:tag" content="数据一致性">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>分布式事务 - 开发札记</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+  
+<link rel="stylesheet" href="/css/custom.css">
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"gavinmo1.github.io","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"|","loop":false,"scope":["home"]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>开发札记</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/featured/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>精选</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/dream.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle">分布式事务</span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-06-21 14:31" pubdate>
+          2026年6月21日 下午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          8.1k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          68 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">分布式事务</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <p>在单体应用中，Spring 加上 <code>@Transactional</code> 注解，数据库就会保证：要么全做，要么全不做。</p>
+<p>但拆分成微服务后，跨服务的调用不再受数据库事务保护。</p>
+<p>以电商系统为例，用户点击“下单”按钮，后台会发生两个动作：</p>
+<ol>
+<li><strong>订单服务</strong>：在订单库创建一条订单记录。</li>
+<li><strong>库存服务</strong>：在库存库扣减一个商品库存。</li>
+</ol>
+<p>在微服务架构下，这是两个跨网络的独立调用。订单创建成功了但库存扣减超时，或者库存扣减成功了但订单服务挂了——无论哪种情况，数据都会出现不一致：多卖了货，或者少记了账。</p>
+<p>这就是分布式事务要解决的核心问题：如何跨越网络的不确定性，维持数据的一致性。</p>
+<h2 id="理论基石"><a href="#理论基石" class="headerlink" title="理论基石"></a>理论基石</h2><p>在看具体方案之前，先理解单体事务的保证机制，再看分布式环境下这些保证为什么会失效。</p>
+<h3 id="回顾：ACID-与分布式困境"><a href="#回顾：ACID-与分布式困境" class="headerlink" title="回顾：ACID 与分布式困境"></a>回顾：ACID 与分布式困境</h3><p>单体应用中，数据库事务依赖 ACID 四大属性来保证数据安全：</p>
+<ul>
+<li><strong>A (Atomicity，原子性)</strong>：事务中的操作要么全部成功，要么全部回滚，不存在中间状态。数据库通过 undo log 实现——如果事务失败，利用日志将数据还原到事务前的状态。</li>
+<li><strong>C (Consistency，一致性)</strong>：事务执行前后，数据始终满足所有约束条件（如外键、唯一索引、业务规则）。这是应用层和数据库层共同保证的结果。</li>
+<li><strong>I (Isolation，隔离性)</strong>：多个并发事务互不干扰，每个事务看到的都是”独立”的数据库。数据库通过锁机制或多版本并发控制（MVCC）实现不同级别的隔离（读未提交、读已提交、可重复读、串行化）。</li>
+<li><strong>D (Durability，持久性)</strong>：事务一旦提交，数据就永久保存，即使系统崩溃也不丢失。数据库通过 redo log 实现——提交时先写日志，崩溃恢复时重放日志。</li>
+</ul>
+<p>Spring 的 <code>@Transactional</code> 注解本质上是把这四个保证委托给了数据库连接（Connection）的 <code>commit()</code>&#x2F;<code>rollback()</code> 机制。但拆成微服务后，订单服务和库存服务各自有独立的数据库连接，没有一个统一的 <code>commit()</code> 能同时覆盖两个库——ACID 的原子性在跨网络场景下失效了。</p>
+<p>这就是分布式事务需要解决的根本矛盾：<strong>单机 ACID 无法跨网络延伸，但业务又需要跨服务的数据一致性</strong>。</p>
+<p>为了理解各类分布式事务方案的取舍，我们需要先看清分布式系统的理论边界：CAP 定理给出了约束条件，BASE 理论指出了工程策略，而 2PC 则是最早的强一致性尝试。</p>
+<h3 id="CAP-定理：不得不做的选择题"><a href="#CAP-定理：不得不做的选择题" class="headerlink" title="CAP 定理：不得不做的选择题"></a>CAP 定理：不得不做的选择题</h3><p>该理论最初由 Eric Brewer 在 2000 年 PODC 会议上提出猜想，后由 Seth Gilbert 和 Nancy Lynch 在 2002 年通过形式化证明确立。</p>
+<p>定理内容为：在一个分布式数据存储系统中，<strong>一致性、可用性、分区容错性</strong> 这三个基本要素，<strong>最多只能同时满足其中的两项</strong>。由于网络不可靠是客观事实，P 是必须满足的前提，因此实际的选择是：<strong>当网络分区发生时，选择 CP（强一致，但可能不可用）还是 AP（高可用，但允许暂时不一致）</strong>。</p>
+<ul>
+<li>C (<strong>C</strong> onsistency)：一致性，所有节点在同一时间看到相同的数据。</li>
+<li>A (<strong>A</strong> vailability)：可用性，系统总能响应请求，即使部分节点挂了。</li>
+<li>P (<strong>P</strong> artition tolerance)：分区容错性，即网络分区导致节点间通信中断时，系统仍能持续运行。</li>
+</ul>
+<p>因此真正的抉择在于 CP 与 AP 之间的权衡。</p>
+<p>CP 架构：<strong>一致性优先</strong></p>
+<p>当网络分区发生时，CP 架构会选择牺牲可用性来换取数据准确性。具体来说，如果部分节点因为网络问题无法与其他节点同步，系统会主动拒绝服务或阻塞请求，直到网络恢复并达成共识——代价就是在分区期间，部分或全部功能不可用。</p>
+<p>这种”宁可不服务，也不能给错误数据”的设计，依赖的是共识算法（如 Paxos、Raft、Zab）和多数派机制（Quorum）——以 Raft 为例，一次写入必须获得超过半数节点的确认才算成功，这从机制上杜绝了脑裂和数据冲突。</p>
+<p>典型系统包括 ZooKeeper &#x2F; Etcd（分布式协调，Leader 选举期间写入不可用，但 Follower 仍可提供读服务，选举通常在几百毫秒内完成）、HBase（每个 Region 由单一 RegionServer 提供写入服务（通过 ZooKeeper 选主），底层 HDFS 采用同步多副本写入，从架构上保证了强一致性。）。这类架构常见于金融交易、库存扣减、分布式锁等对数据准确性要求极高的场景。</p>
+<p>AP 架构：<strong>可用性优先</strong></p>
+<p>与 CP 相反，AP 架构在分区发生时优先保证业务不中断。即使节点之间失去联系，每个节点仍可独立响应请求，返回本地已有的数据——哪怕这份数据可能不是最新的。等到网络恢复后，系统再通过后台机制进行数据合并与冲突解决。代价是不同节点在短期内可能持有不同版本的数据。</p>
+<p>实现这种”先响应、后对齐”的机制包括：Gossip 协议（节点间随机通信传播状态变化）、向量时钟与 CRDTs 等冲突解决策略，以及 Read Repair、Hinted Handoff 等反熵机制来逐步收敛数据。</p>
+<p>典型系统如 Cassandra &#x2F; DynamoDB（写入即可返回，后台异步同步）和服务发现组件 Eureka（优先保证客户端能拿到服务列表，哪怕列表里混着已下线的节点）。社交点赞、商品评论、DNS 解析这类对短暂不一致容忍度较高的业务，天然适合 AP 架构。</p>
+<blockquote>
+<p>PACELC 理论</p>
+<p>由 Daniel Abadi 提出，填补了 CAP 理论中“无分区时如何权衡”的空白。</p>
+<p>P (Partition)：如果有网络分区，必须在 A（可用性）和 C（一致性）之间选择。<br>E (Else)：如果没有网络分区，必须在 L（Latency，延迟）和 C（一致性）之间选择。</p>
+<p>深层含义：强一致性通常意味着需要等待更多节点的确认，这必然增加延迟。追求极致低延迟，往往需要放宽一致性要求。</p>
+</blockquote>
+<h3 id="BASE-理论：放弃强一致性"><a href="#BASE-理论：放弃强一致性" class="headerlink" title="BASE 理论：放弃强一致性"></a>BASE 理论：放弃强一致性</h3><p>CAP 定理给出了约束条件，而 BASE 理论则是在该约束下的工程策略——既然分区不可避为了追求互联网应用的高可用，我们往往退而求其次，遵循 BASE 理论：</p>
+<ul>
+<li>BA (Basically Available)：基本可用，允许服务降级。具体表现包括：高峰期返回缓存数据而非实时数据、非核心功能降级到只读模式、限流后返回”请稍后重试”而非直接超时。核心是”有响应比没响应好”。</li>
+<li>S (Soft state)：软状态，允许系统在没有新外部输入的情况下自行变更状态（如后台异步复制导致数据暂时不一致）。业务上类似”支付中”这种待定状态，也是系统容忍中间态的体现——系统不需要在每一刻都处于一个确定状态。</li>
+<li>E (Eventually consistent)：最终一致性，经过一段时间数据终变一致。”一段时间”可能是毫秒级（同机房同步）也可能是分钟级（跨地域复制），但系统保证在没有新写入的情况下，所有副本最终会收敛到相同值。</li>
+</ul>
+<p>BASE 与 ACID 的本质区别在于：ACID 要求”事务结束时数据一定正确”，BASE 允许”中间状态可见，但最终会正确”。后续讨论的 Saga、TCC 补偿、消息队列最终一致性等方案，都是 BASE 理论在不同场景下的具体实践。</p>
+<p>不过，BASE 并非万能。在金融交易、库存扣减等场景下，”最终一致”意味着”短暂不一致”，这个窗口期内可能造成资金损失。因此业界一直在探索分布式强一致性方案——2PC（两阶段提交）是最早的尝试，也是后续所有方案的起点。</p>
+<h3 id="2PC-与-3PC：强一致性的代价"><a href="#2PC-与-3PC：强一致性的代价" class="headerlink" title="2PC 与 3PC：强一致性的代价"></a>2PC 与 3PC：强一致性的代价</h3><p>2PC (Two-Phase Commit) 由 Jim Gray 在 1978 年提出，是一种试图在分布式环境实现严格原子性的协议。后续 X&#x2F;Open 组织将其标准化为 XA 规范（X&#x2F;Open XA），Java 生态中的 JTA（Java Transaction API）和 Atomikos、Narayana 等事务管理器都基于 XA 实现。</p>
+<p><strong>2PC 的完整流程：</strong></p>
+<ul>
+<li><strong>阶段 1 (Prepare)</strong>：协调者向所有参与者发送 Prepare 请求。参与者收到后：(1) 执行本地事务的 SQL，但不提交；(2) 将 undo log 和 redo log 写入磁盘；(3) 锁定相关资源行；(4) 向协调者回复 Yes 或 No。</li>
+<li><strong>阶段 2 (Commit&#x2F;Rollback)</strong>：协调者收集所有回复。<ul>
+<li>全部 Yes → 发送 Commit 指令，所有参与者正式提交，释放锁。</li>
+<li>任一 No（或超时未回复）→ 发送 Rollback 指令，所有参与者利用 undo log 回滚，释放锁。</li>
+</ul>
+</li>
+</ul>
+<p><strong>2PC 的三个严重问题：</strong></p>
+<ul>
+<li><strong>同步阻塞</strong>：所有参与者在 Prepare 阶段持锁等待，必须等到最慢的那个回复才能进入阶段 2。在 N 个参与者的场景下，整体延迟取决于最慢的那个——锁的时间 &#x3D; 网络往返 + 最慢参与者的本地事务耗时。</li>
+<li><strong>协调者单点故障（阻塞风险）</strong>：如果协调者在阶段 2 的 Commit 指令发出前崩溃，参与者会无限期处于 READY 状态——已经锁了资源、写了日志，但不知道该提交还是回滚。只能被动等待协调者恢复，期间资源被锁死。</li>
+<li><strong>数据不一致风险</strong>：如果 Commit 指令只发到了部分参与者（网络分区），就会出现一部分提交、一部分未提交的不一致状态。</li>
+</ul>
+<p><strong>3PC 的改进与局限：</strong></p>
+<p>为了解决 2PC 的阻塞问题，3PC (Three-Phase Commit) 引入了 PreCommit 阶段和超时机制：</p>
+<ul>
+<li><strong>CanCommit</strong>：协调者询问参与者”能否提交？”（轻量级探查，不锁资源）。</li>
+<li><strong>PreCommit</strong>：全部 Yes 后，协调者发送 PreCommit，参与者此时才真正执行 Prepare（写日志、锁资源）。</li>
+<li><strong>DoCommit</strong>：协调者发送最终 Commit 指令。</li>
+</ul>
+<p>关键改进：如果参与者在 PreCommit 阶段后长时间收不到 DoCommit 指令（超时），会自动提交——因为既然已经进入了 PreCommit，说明所有参与者都投了 Yes，大概率可以安全提交。</p>
+<p>但 3PC 也有致命缺陷：在网络分区场景下，”超时自动提交”可能导致部分参与者提交、部分参与者回滚，造成<strong>脑裂和数据不一致</strong>。因此 3PC 在实际工程中几乎没有被直接采用，但它的设计思想（减少阻塞、引入超时）影响了后续的 TCC 和 Saga 等方案。</p>
+<blockquote>
+<p>PACELC 理论</p>
+<p>由 Daniel Abadi 提出，填补了 CAP 理论中”无分区时如何权衡”的空白。</p>
+<p>P (Partition)：如果有网络分区，必须在 A（可用性）和 C（一致性）之间选择。<br>E (Else)：如果没有网络分区，必须在 L（Latency，延迟）和 C（一致性）之间选择。</p>
+<p>深层含义：强一致性通常意味着需要等待更多节点的确认，这必然增加延迟。追求极致低延迟，往往需要放宽一致性要求。后续讨论的 Saga、TCC、消息队列等方案，本质都是在一致性、可用性、延迟之间做不同权衡——PACELC 提供了理解这些权衡的框架。</p>
+</blockquote>
+<h2 id="主流解决方案"><a href="#主流解决方案" class="headerlink" title="主流解决方案"></a>主流解决方案</h2><p>Seata (Simple Extensible Autonomous Transaction Architecture) 是阿里巴巴开源的分布式事务解决方案，目标是让分布式事务的使用像本地事务一样简单。</p>
+<p>Seata 的架构由三个核心组件组成：</p>
+<ul>
+<li><strong>TC (Transaction Coordinator)</strong>：事务协调器，独立部署的服务端，负责管理全局事务的生命周期（开启、提交、回滚），维护全局锁。</li>
+<li><strong>TM (Transaction Manager)</strong>：事务管理器，嵌入业务应用中，负责发起全局事务（通过 <code>@GlobalTransactional</code> 注解标记入口方法）。</li>
+<li><strong>RM (Resource Manager)</strong>：资源管理器，嵌入业务应用中，负责管理分支事务（如数据库连接），向 TC 注册分支事务并报告执行结果。</li>
+</ul>
+<p>一次典型的分布式事务流程：TM 发起全局事务 → TC 分配全局事务 ID（XID）→ 各 RM 执行本地事务并注册分支 → TC 根据各分支结果决定全局提交或回滚 → TM 结束全局事务。</p>
+<h3 id="Seata-AT-模式"><a href="#Seata-AT-模式" class="headerlink" title="Seata AT 模式"></a>Seata AT 模式</h3><p>AT 模式是这一目标的最直接体现：不需要修改业务代码，只需要加一个注解。Seata 会利用代理机制（通过 DataSourceProxy 代理数据源），拦截你的 SQL，自动记录”修改前的数据”和”修改后的数据”到 <strong>undo_log 表</strong>中。如果所有服务都成功，它就清理掉这些记录；如果有服务失败，它就利用这些记录生成反向补偿 SQL 把数据还原。</p>
+<p><strong>undo_log 的工作原理：</strong></p>
+<p>每个需要 AT 模式的业务数据库中，都需要建一张 <code>undo_log</code> 表（Seata 提供建表脚本）。表的核心字段包括：<code>branch_id</code>（分支事务 ID）、<code>xid</code>（全局事务 ID）、<code>rollback_info</code>（序列化后的前后镜像数据）。流程如下：</p>
+<ol>
+<li>一阶段：Seata 拦截 SQL，执行前记录 Before Image，执行后记录 After Image，与业务 SQL 在同一个本地事务中写入 undo_log。</li>
+<li>二阶段提交：全局事务成功，异步删除 undo_log 记录（批量清理，不影响主流程性能）。</li>
+<li>二阶段回滚：全局事务失败，取出 Before Image，生成反向 SQL（如原操作是 <code>UPDATE SET stock=90</code>，反向 SQL 为 <code>UPDATE SET stock=100</code>），执行回滚后删除 undo_log。</li>
+</ol>
+<p>AT 模式是典型的低门槛方案，但它有一个隐患：脏写。</p>
+<p>如果有一个<strong>非 Seata 管理的后台脚本</strong>，直接去修改了数据库，会发生什么？</p>
+<ol>
+<li>事务 A 修改库存，提交本地事务（释放了数据库行锁）。</li>
+<li>外部脚本修改库存。</li>
+<li>事务 A 收到回滚指令，根据 Before Image (100) 强行回滚：<code>SET stock = 100</code>。</li>
+<li>结果：外部脚本修改的 80 被覆盖丢失了。</li>
+</ol>
+<p>为了解决这个问题，Seata 引入了全局锁——在二阶段提交&#x2F;回滚完成前，该记录被 Seata 的协调者（TC）逻辑锁定。全局锁的实现细节：</p>
+<ul>
+<li><strong>锁粒度</strong>：行级锁，存储在 TC 端（内存 + 持久化到 DB&#x2F;Redis）。</li>
+<li><strong>锁获取</strong>：一阶段提交前，RM 向 TC 申请全局锁。如果该行已被其他全局事务锁定，当前事务会等待（可配置超时时间，默认 30s，超时后抛异常回滚）。</li>
+<li><strong>锁冲突策略</strong>：默认等待重试，也支持快速失败（不等待直接回滚）。</li>
+<li><strong>与本地锁的关系</strong>：全局锁是 TC 端的逻辑锁，与数据库的行锁互不干扰。本地事务提交后数据库行锁即释放，但全局锁要到二阶段完成后才释放。</li>
+</ul>
+<p>但全局锁在热点数据场景下会成为瓶颈：成千上万的请求同时抢夺同一行记录，不仅拖低吞吐量，还容易引发锁等待超时。</p>
+<p>AT 适合并发量适中、非热点数据、追求开发效率的中后台业务。</p>
+<h3 id="XA-模式"><a href="#XA-模式" class="headerlink" title="XA 模式"></a>XA 模式</h3><p>XA 是 X&#x2F;Open 组织制定的分布式事务接口标准，它采用 2PC 作为提交协议。因此，XA 模式本质上是 2PC 在数据库层面的标准化实现——协调者与参与者之间的交互由数据库原生支持，而非像 AT 模式那样由 Seata 在应用层模拟。</p>
+<ul>
+<li>一阶段（Prepare）：业务代码执行 SQL，但在提交时，Seata 的事务管理器（TM）会告诉数据库：”先别真提交，把资源锁死，数据写入日志，进入’准备好’的状态”。此时，数据库会锁定这一行数据，任何人都动不了。</li>
+<li>二阶段（Commit &#x2F; Rollback）：Seata 收集所有服务的状态。<ul>
+<li>全成功：通知数据库”正式提交”，数据库释放锁，数据生效。</li>
+<li>有失败：通知数据库”回滚”，数据库利用自身的日志恢复，释放锁。</li>
+</ul>
+</li>
+</ul>
+<p>优点：</p>
+<ol>
+<li>强一致性：由数据库保证，在合适的隔离级别（如 SERIALIZABLE）下没有脏读，没有中间状态。</li>
+<li>SQL 支持度好：AT 模式解析复杂 SQL（如存储过程、复杂连接）可能会失败，但 XA 是数据库原生的，SQL 兼容性与数据库引擎一致。</li>
+<li>无侵入：不需要像 AT 那样建 <code>undo_log</code> 表。</li>
+</ol>
+<p>缺点：</p>
+<ol>
+<li>性能差：数据库锁要持有到第二阶段结束，锁的时间长，并发度低。</li>
+<li>单点风险：这是经典 2PC 的固有问题——如果协调者崩溃，参与者无法自行决定。但在 Seata 的 XA 模式中，TC 可以高可用部署（集群模式），且数据库本身有锁等待超时机制（如 MySQL 的 <code>innodb_lock_wait_timeout</code>），不会无限期死锁。此外，数据库支持 <code>xa recover</code> 命令可恢复处于 PREPARED 状态的事务。</li>
+</ol>
+<p>过去互联网公司不用 XA 是因为性能差。但随着云原生数据库（如阿里云 PolarDB）和高速网络的普及，XA 的性能损耗被大幅降低——PolarDB 的共享存储架构减少了 2PC 的网络往返次数，RDMA 高速网络将 Prepare-Commit 的延迟从毫秒级降到微秒级。对于非高并发、但数据极其重要的系统（如内部 ERP、财务系统），XA 是稳妥的选择。</p>
+<h3 id="Seata-TCC-模式"><a href="#Seata-TCC-模式" class="headerlink" title="Seata TCC 模式"></a>Seata TCC 模式</h3><p>AT 模式因为要加全局锁，性能有上限。TCC 的思路是把锁的粒度从数据库层面移交到业务逻辑层面。</p>
+<p>类比：买房交定金</p>
+<ul>
+<li><strong>Try (定金)</strong>：你不用付全款，先付 5 万定金。房产中介把房子“锁”住（预留），别人买不了。</li>
+<li><strong>Confirm (交房)</strong>：你凑齐了首付，正式过户。</li>
+<li><strong>Cancel (退定)</strong>：你反悔了，中介把房子释放出来卖给别人，定金退回。</li>
+</ul>
+<p>TCC 要求将一个业务接口拆分为三个方法。以 Seata TCC 为例，需要定义一个接口和对应实现：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// 接口定义：使用 @TwoPhaseBusinessAction 注解声明 TCC 三阶段</span><br><span class="hljs-meta">@LocalTCC</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">interface</span> <span class="hljs-title class_">StockService</span> &#123;<br><br>    <span class="hljs-meta">@TwoPhaseBusinessAction(name = &quot;stockDeduct&quot;, commitMethod = &quot;confirm&quot;, rollbackMethod = &quot;cancel&quot;)</span><br>    <span class="hljs-type">boolean</span> <span class="hljs-title function_">tryDeduct</span><span class="hljs-params">(BusinessActionContext context,</span><br><span class="hljs-params">                      <span class="hljs-meta">@BusinessActionContextParameter(paramName = &quot;id&quot;)</span> <span class="hljs-type">long</span> id,</span><br><span class="hljs-params">                      <span class="hljs-meta">@BusinessActionContextParameter(paramName = &quot;count&quot;)</span> <span class="hljs-type">int</span> count)</span>;<br><br>    <span class="hljs-type">boolean</span> <span class="hljs-title function_">confirm</span><span class="hljs-params">(BusinessActionContext context)</span>;<br><br>    <span class="hljs-type">boolean</span> <span class="hljs-title function_">cancel</span><span class="hljs-params">(BusinessActionContext context)</span>;<br>&#125;<br><br><span class="hljs-comment">// 实现类</span><br><span class="hljs-meta">@Component</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">StockServiceImpl</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">StockService</span> &#123;<br><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-meta">@Transactional</span>  <span class="hljs-comment">// Try 阶段需要本地事务保证资源冻结的原子性</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-type">boolean</span> <span class="hljs-title function_">tryDeduct</span><span class="hljs-params">(BusinessActionContext context, <span class="hljs-type">long</span> id, <span class="hljs-type">int</span> count)</span> &#123;<br>        <span class="hljs-comment">// 1. 资源检查：库存不足时抛异常，框架会自动触发 Cancel</span><br>        <span class="hljs-type">int</span> <span class="hljs-variable">stock</span> <span class="hljs-operator">=</span> stockMapper.getAvailableStock(id);<br>        <span class="hljs-keyword">if</span> (stock &lt; count) &#123;<br>            <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">BusinessException</span>(<span class="hljs-string">&quot;库存不足&quot;</span>);<br>        &#125;<br>        <span class="hljs-comment">// 2. 资源预留：将库存移入 frozen_stock 字段</span><br>        stockMapper.deductStock(id, count);       <span class="hljs-comment">// available_stock -= count</span><br>        stockMapper.addFrozenStock(id, count);    <span class="hljs-comment">// frozen_stock += count</span><br>        <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>;<br>    &#125;<br><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-meta">@Transactional</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-type">boolean</span> <span class="hljs-title function_">confirm</span><span class="hljs-params">(BusinessActionContext context)</span> &#123;<br>        <span class="hljs-comment">// 消耗冻结资源，不需要检查库存（Try 阶段已保证）</span><br>        <span class="hljs-type">long</span> <span class="hljs-variable">id</span> <span class="hljs-operator">=</span> (<span class="hljs-type">long</span>) context.getActionContext(<span class="hljs-string">&quot;id&quot;</span>);<br>        <span class="hljs-type">int</span> <span class="hljs-variable">count</span> <span class="hljs-operator">=</span> (<span class="hljs-type">int</span>) context.getActionContext(<span class="hljs-string">&quot;count&quot;</span>);<br>        stockMapper.reduceFrozenStock(id, count); <span class="hljs-comment">// frozen_stock -= count</span><br>        <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>;<br>    &#125;<br><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-meta">@Transactional</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-type">boolean</span> <span class="hljs-title function_">cancel</span><span class="hljs-params">(BusinessActionContext context)</span> &#123;<br>        <span class="hljs-type">long</span> <span class="hljs-variable">id</span> <span class="hljs-operator">=</span> (<span class="hljs-type">long</span>) context.getActionContext(<span class="hljs-string">&quot;id&quot;</span>);<br>        <span class="hljs-type">int</span> <span class="hljs-variable">count</span> <span class="hljs-operator">=</span> (<span class="hljs-type">int</span>) context.getActionContext(<span class="hljs-string">&quot;count&quot;</span>);<br>        <span class="hljs-comment">// 必须检查是否收到过 Try（防空回滚）</span><br>        <span class="hljs-keyword">if</span> (stockMapper.getFrozenStock(id, count) == <span class="hljs-number">0</span>) &#123;<br>            <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>; <span class="hljs-comment">// Try 未执行，直接返回成功</span><br>        &#125;<br>        <span class="hljs-comment">// 恢复可用库存，释放冻结</span><br>        stockMapper.increaseStock(id, count);     <span class="hljs-comment">// available_stock += count</span><br>        stockMapper.reduceFrozenStock(id, count); <span class="hljs-comment">// frozen_stock -= count</span><br>        <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><strong>说明</strong>：<code>@TwoPhaseBusinessAction</code> 告诉 Seata 框架这是一个 TCC 事务，框架会自动在全局事务提交时调用 <code>confirm</code>，在全局事务回滚时调用 <code>cancel</code>。开发者只需关注三个方法的业务逻辑。Confirm 和 Cancel 方法同样需要 <code>@Transactional</code> 注解，因为它们内部也有数据库操作需要原子性保证。</p>
+</blockquote>
+<p>TCC 灵活性高，但复杂性完全转嫁给了业务方。在分布式网络环境中，必须在代码中处理以下三种异常，否则会导致资金损失。这些异常的防护逻辑需要用一张<strong>事务状态表</strong>来记录每个事务 ID 的执行状态：</p>
+<ol>
+<li><p><strong>空回滚</strong></p>
+<ul>
+<li>场景：Try 请求因为网络丢包，根本没发到库存服务。但协调器（TC）认为失败了，触发了 Cancel。</li>
+<li>后果：Cancel 执行了”退钱&#x2F;释放库存”的操作。如果没做防护，会导致库存凭空增加。</li>
+<li>对策：Cancel 执行时，先查事务状态表——如果没有该 XID 的 Try 记录，说明 Try 未执行过，直接返回成功，不做任何业务操作。</li>
+</ul>
+</li>
+<li><p><strong>幂等</strong></p>
+<ul>
+<li>场景：网络抖动，TC 以为 Confirm 超时了，重发了一次 Confirm。</li>
+<li>后果：库存被扣了两次。</li>
+<li>对策：Confirm&#x2F;Cancel 执行前，先查事务状态表——如果该 XID 已经处理过（状态为 <code>CONFIRMED</code> 或 <code>CANCELLED</code>），直接返回成功，不重复执行。</li>
+</ul>
+</li>
+<li><p><strong>悬挂</strong></p>
+<ul>
+<li>场景：网络极度拥堵。Cancel 比 Try 先到了。Cancel 发现没 Try 过，直接返回成功（空回滚）。随后，迟到的 Try 到了，并执行成功。</li>
+<li>后果：资源被 Try 冻结了，但永远不会被 Confirm 或 Cancel，成为无法回收的资源。</li>
+<li>对策：Try 执行时，先查事务状态表——如果该 XID 已经存在 Cancel 记录，说明 Cancel 已先到（悬挂），Try 应拒绝执行。</li>
+</ul>
+</li>
+</ol>
+<p><strong>防护代码示例</strong>（基于事务状态表 <code>tcc_transaction_log</code>）：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// 事务状态表结构：xid(全局事务ID), status(TRYING/CONFIRMED/CANCELLED), create_time</span><br><br><span class="hljs-comment">// Cancel 方法中的防护逻辑</span><br><span class="hljs-keyword">public</span> <span class="hljs-type">boolean</span> <span class="hljs-title function_">cancel</span><span class="hljs-params">(BusinessActionContext context)</span> &#123;<br>    <span class="hljs-type">String</span> <span class="hljs-variable">xid</span> <span class="hljs-operator">=</span> context.getXid();<br>    <span class="hljs-comment">// 1. 空回滚防护：查询是否收到过 Try</span><br>    <span class="hljs-type">TccLog</span> <span class="hljs-variable">log</span> <span class="hljs-operator">=</span> tccLogMapper.selectByXid(xid);<br>    <span class="hljs-keyword">if</span> (log == <span class="hljs-literal">null</span>) &#123;<br>        <span class="hljs-comment">// Try 未执行，记录 Cancel 状态（防悬挂），直接返回</span><br>        tccLogMapper.insert(<span class="hljs-keyword">new</span> <span class="hljs-title class_">TccLog</span>(xid, “CANCELLED”));<br>        <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>;<br>    &#125;<br>    <span class="hljs-comment">// 2. 幂等防护：是否已经 Cancel 过</span><br>    <span class="hljs-keyword">if</span> (“CANCELLED”.equals(log.getStatus())) &#123;<br>        <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>; <span class="hljs-comment">// 重复 Cancel，直接返回</span><br>    &#125;<br>    <span class="hljs-comment">// 3. 执行真正的回滚逻辑</span><br>    stockMapper.increaseStock(id, count);<br>    stockMapper.reduceFrozenStock(id, count);<br>    tccLogMapper.updateStatus(xid, “CANCELLED”);<br>    <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>;<br>&#125;<br><br><span class="hljs-comment">// Try 方法中的防护逻辑</span><br><span class="hljs-keyword">public</span> <span class="hljs-type">boolean</span> <span class="hljs-title function_">tryDeduct</span><span class="hljs-params">(BusinessActionContext context, <span class="hljs-type">long</span> id, <span class="hljs-type">int</span> count)</span> &#123;<br>    <span class="hljs-type">String</span> <span class="hljs-variable">xid</span> <span class="hljs-operator">=</span> context.getXid();<br>    <span class="hljs-comment">// 悬挂防护：检查是否已经执行过 Cancel</span><br>    <span class="hljs-type">TccLog</span> <span class="hljs-variable">log</span> <span class="hljs-operator">=</span> tccLogMapper.selectByXid(xid);<br>    <span class="hljs-keyword">if</span> (log != <span class="hljs-literal">null</span> &amp;&amp; “CANCELLED”.equals(log.getStatus())) &#123;<br>        <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>; <span class="hljs-comment">// Cancel 已先到，拒绝执行 Try</span><br>    &#125;<br>    <span class="hljs-comment">// 记录 Try 状态</span><br>    tccLogMapper.insertOrUpdate(<span class="hljs-keyword">new</span> <span class="hljs-title class_">TccLog</span>(xid, “TRYING”));<br>    <span class="hljs-comment">// ... 正常业务逻辑</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>TCC 不长期持有数据库锁，性能高，但开发和测试成本也高，仅适用于核心资金链路或高并发场景。</p>
+<h3 id="Seata-Saga-模式"><a href="#Seata-Saga-模式" class="headerlink" title="Seata Saga 模式"></a>Seata Saga 模式</h3><p>有些业务流程很长，既不能像 AT 模式那样长时间锁表，也不能像 TCC 那样要求每个服务都改造代码。</p>
+<p>你要预订一次欧洲旅行，流程是：<code>订机票</code>  <code>订酒店</code>  <code>租车</code>。这个流程涉及三个不同的供应商，甚至可能需要人工审核，整个过程可能持续几分钟甚至几小时。</p>
+<ul>
+<li><strong>如果用 AT&#x2F;TCC</strong>：从订机票开始，数据库就被锁住了。直到租车成功，机票的锁才释放。这期间，别人无法买这张票。</li>
+</ul>
+<p>核心定义：Saga 模式把一个大事务拆分成多个<strong>各自独立提交</strong>的本地短事务。就像接力赛：</p>
+<ul>
+<li>第一棒（机票）跑完，<strong>立刻提交</strong>，释放锁。</li>
+<li>第二棒（酒店）跑完，<strong>立刻提交</strong>。</li>
+<li>如果第三棒（租车）摔倒了，Saga 协调器会负责往回跑：退酒店（补偿）、退机票（补偿）。</li>
+</ul>
+<p>需要注意的是，补偿操作本身也可能失败（如退款 API 超时）。因此所有补偿事务必须设计为<strong>可重试且幂等</strong>的，Saga 协调器需要具备自动重试机制。</p>
+<p>Saga 的核心在于定义”如何前进”和”如何后退”，开发者需要通过 JSON 或代码定义一个状态机。以 Seata Saga 为例，状态机定义如下：</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><code class="hljs json"><span class="hljs-punctuation">&#123;</span><br>  “Name”<span class="hljs-punctuation">:</span> “bookTripStateMachine”<span class="hljs-punctuation">,</span><br>  “States”<span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><br>    “BookFlight”<span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><br>      “Type”<span class="hljs-punctuation">:</span> “ServiceTask”<span class="hljs-punctuation">,</span><br>      “ServiceName”<span class="hljs-punctuation">:</span> “flightService”<span class="hljs-punctuation">,</span><br>      “ServiceMethod”<span class="hljs-punctuation">:</span> “book”<span class="hljs-punctuation">,</span><br>      “CompensateState”<span class="hljs-punctuation">:</span> “CancelFlight”<span class="hljs-punctuation">,</span><br>      “Next”<span class="hljs-punctuation">:</span> “BookHotel”<br>    <span class="hljs-punctuation">&#125;</span><span class="hljs-punctuation">,</span><br>    “BookHotel”<span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><br>      “Type”<span class="hljs-punctuation">:</span> “ServiceTask”<span class="hljs-punctuation">,</span><br>      “ServiceName”<span class="hljs-punctuation">:</span> “hotelService”<span class="hljs-punctuation">,</span><br>      “ServiceMethod”<span class="hljs-punctuation">:</span> “book”<span class="hljs-punctuation">,</span><br>      “CompensateState”<span class="hljs-punctuation">:</span> “CancelHotel”<span class="hljs-punctuation">,</span><br>      “Next”<span class="hljs-punctuation">:</span> “RentCar”<br>    <span class="hljs-punctuation">&#125;</span><span class="hljs-punctuation">,</span><br>    “RentCar”<span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><br>      “Type”<span class="hljs-punctuation">:</span> “ServiceTask”<span class="hljs-punctuation">,</span><br>      “ServiceName”<span class="hljs-punctuation">:</span> “carService”<span class="hljs-punctuation">,</span><br>      “ServiceMethod”<span class="hljs-punctuation">:</span> “rent”<span class="hljs-punctuation">,</span><br>      “CompensateState”<span class="hljs-punctuation">:</span> “CancelCar”<span class="hljs-punctuation">,</span><br>      “Next”<span class="hljs-punctuation">:</span> “End”<br>    <span class="hljs-punctuation">&#125;</span><span class="hljs-punctuation">,</span><br>    “CancelFlight”<span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span> “Type”<span class="hljs-punctuation">:</span> “Compensate”<span class="hljs-punctuation">,</span> “ServiceName”<span class="hljs-punctuation">:</span> “flightService”<span class="hljs-punctuation">,</span> “ServiceMethod”<span class="hljs-punctuation">:</span> “cancel” <span class="hljs-punctuation">&#125;</span><span class="hljs-punctuation">,</span><br>    “CancelHotel”<span class="hljs-punctuation">:</span>  <span class="hljs-punctuation">&#123;</span> “Type”<span class="hljs-punctuation">:</span> “Compensate”<span class="hljs-punctuation">,</span> “ServiceName”<span class="hljs-punctuation">:</span> “hotelService”<span class="hljs-punctuation">,</span>  “ServiceMethod”<span class="hljs-punctuation">:</span> “cancel” <span class="hljs-punctuation">&#125;</span><span class="hljs-punctuation">,</span><br>    “CancelCar”<span class="hljs-punctuation">:</span>    <span class="hljs-punctuation">&#123;</span> “Type”<span class="hljs-punctuation">:</span> “Compensate”<span class="hljs-punctuation">,</span> “ServiceName”<span class="hljs-punctuation">:</span> “carService”<span class="hljs-punctuation">,</span>    “ServiceMethod”<span class="hljs-punctuation">:</span> “cancel” <span class="hljs-punctuation">&#125;</span><span class="hljs-punctuation">,</span><br>    “End”<span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span> “Type”<span class="hljs-punctuation">:</span> “Succeed” <span class="hljs-punctuation">&#125;</span><span class="hljs-punctuation">,</span><br>    “Catch”<span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span> “Type”<span class="hljs-punctuation">:</span> “CompensateTrigger”<span class="hljs-punctuation">,</span> “Next”<span class="hljs-punctuation">:</span> “CancelCar” <span class="hljs-punctuation">&#125;</span><br>  <span class="hljs-punctuation">&#125;</span><br><span class="hljs-punctuation">&#125;</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><strong>补偿不等于撤销</strong>：补偿操作不一定能”撤销”原操作（已发送的短信无法撤回、已发货的包裹无法自动召回）。对于不可逆操作，通常的策略是”发放补偿”——例如取消订单后发放一张优惠券，而非试图撤回已发送的通知。这是 Saga 模式在设计时需要特别注意的约束。</p>
+</blockquote>
+<p><strong>Saga 的两种实现方式：</strong></p>
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>协同式（Choreography）</th>
+<th>编排式（Orchestration）</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>协调方式</td>
+<td>去中心化，各服务通过事件驱动自行监听和响应</td>
+<td>中心化，由编排器（状态机）统一调度</td>
+</tr>
+<tr>
+<td>通信机制</td>
+<td>消息队列（每个服务发布事件，其他服务订阅）</td>
+<td>编排器直接调用各服务 API</td>
+</tr>
+<tr>
+<td>优点</td>
+<td>无单点故障，服务间松耦合</td>
+<td>流程清晰可控，易于监控和调试</td>
+</tr>
+<tr>
+<td>缺点</td>
+<td>流程分散在各服务中，难以追踪和调试；服务间形成隐式依赖</td>
+<td>编排器是单点（需高可用），服务与编排器耦合</td>
+</tr>
+<tr>
+<td>适用场景</td>
+<td>简单的 2-3 步流程</td>
+<td>复杂的多步流程、需要人工审核的长流程</td>
+</tr>
+</tbody></table>
+<p>Seata 采用编排式（状态机驱动），因为编排式可以集中管理补偿逻辑和异常处理，更适合企业级复杂业务场景。</p>
+<ul>
+<li>正常情况（All Good）：BookFlight → BookHotel → RentCar → End</li>
+<li>异常情况（RentCar 失败）：BookFlight → BookHotel → RentCar(失败) → Catch → CancelCar → CancelHotel → CancelFlight</li>
+</ul>
+<p>Saga 打破了 ACID 中的隔离性（Isolation）。因为每个子事务都是立即提交的，中间状态对外界可见，会引发脏读。</p>
+<ol>
+<li>用户 A 订了最后一张机票（ 提交）。</li>
+<li>用户 B 来查票，发现没票了（看见了 A 的提交）。</li>
+<li>用户 A 后续的酒店预订失败了，触发补偿取消了机票（ 执行）。</li>
+<li><strong>结果</strong>：用户 B 刚才看到的是一个“无效”的状态，且因为这个状态放弃了购买。这就是 <strong>脏读</strong>。</li>
+</ol>
+<p>为了解决这个问题，通常需要在业务层面引入语义锁（Semantic Lock）。比如在订机票时，不直接把票减掉，而是将状态改为 <code>BOOKING_PENDING</code>（预订中）；只有当整个 Saga 流程全部完成，才把状态改为 <code>CONFIRMED</code>。</p>
+<p><strong>语义锁的完整生命周期：</strong></p>
+<ol>
+<li><strong>设置</strong>：第一步子事务执行时，将资源状态从 <code>AVAILABLE</code> 改为 <code>BOOKING_PENDING</code>。</li>
+<li><strong>释放（成功）</strong>：整个 Saga 流程全部完成，最后一步将状态从 <code>BOOKING_PENDING</code> 改为 <code>CONFIRMED</code>。</li>
+<li><strong>释放（失败）</strong>：任何一步失败触发补偿，将状态从 <code>BOOKING_PENDING</code> 改回 <code>AVAILABLE</code>。</li>
+<li><strong>超时清理</strong>：如果 Saga 流程卡住（如编排器崩溃），<code>BOOKING_PENDING</code> 状态会一直存在。需要一个定时任务扫描超时的 <code>PENDING</code> 记录（如超过 30 分钟），将其回滚为 <code>AVAILABLE</code> 或触发告警人工介入。</li>
+<li><strong>对查询的影响</strong>：查询接口需要过滤掉 <code>PENDING</code> 状态的资源——对外只展示 <code>AVAILABLE</code> 和 <code>CONFIRMED</code>，避免用户看到”已被占但可能回滚”的中间态。</li>
+</ol>
+<p>Saga 适合业务流程长、跨机构或跨遗留系统的场景。</p>
+<h3 id="RocketMQ-事务消息"><a href="#RocketMQ-事务消息" class="headerlink" title="RocketMQ 事务消息"></a>RocketMQ 事务消息</h3><p>并不是所有业务都需要”同时成功”。比如用户支付成功后需要增加积分，如果积分服务挂了，用户通常能接受积分晚 10 秒到账。</p>
+<p>这就不需要强一致性事务，而是最终一致性。核心思想是：只要本地事务成功了，就保证消息一定能发出去；只要消息发出去了，消费者最终一定能收到。</p>
+<p>普通的 MQ 发送消息是不可靠的：可能消息发出去了，本地数据库回滚了；或者本地数据库提交了，消息发失败了。RocketMQ 引入了 <strong>Half Message（半消息）</strong> 来解决原子性问题。</p>
+<p><strong>核心步骤：</strong></p>
+<ol>
+<li><strong>发送半消息</strong>：生产者发一条消息给 MQ，MQ 收到了但不给消费者看（Pending 状态）。</li>
+<li><strong>执行本地事务</strong>：生产者执行具体的业务（如：更新订单状态）。</li>
+<li><strong>Commit&#x2F;Rollback</strong>：<ul>
+<li>本地事务成功，通知 MQ “这条消息可以投递了”。</li>
+<li>本地事务失败，通知 MQ “把这条消息删了吧”。</li>
+</ul>
+</li>
+</ol>
+<p>RocketMQ 方案的关键在于处理”未决”状态。如果在执行本地事务后，服务器立刻断电，没来得及发 Commit 给 MQ，MQ 里的消息会一直是”半消息”状态。RocketMQ 会启动回查机制（Transaction Check Back），主动问生产者：”刚才那个事务 ID，你到底执行成功没？”生产者需要实现一个检查接口（例如查数据库订单表），确认事务状态并回复。</p>
+<p><strong>回查策略配置：</strong></p>
+<ul>
+<li><strong>回查间隔</strong>：由 Broker 配置（默认 60 秒），第一次回查在半消息发送后 60 秒触发。</li>
+<li><strong>最大回查次数</strong>：默认 15 次。超过后消息会被丢弃（或进入死信队列，取决于 Broker 配置）。</li>
+<li><strong>回查触发条件</strong>：(1) 本地事务执行后未发送 Commit&#x2F;Rollback；(2) Commit&#x2F;Rollback 发送失败（网络问题）；(3) 本地事务执行超时。</li>
+</ul>
+<p><strong>消费者端的可靠性保障：</strong></p>
+<p>消息到达消费者后，消费者消费失败怎么办？RocketMQ 提供了重试机制：</p>
+<ul>
+<li><strong>消费重试</strong>：消费者返回 <code>RECONSUME_LATER</code> 或抛异常时，消息会进入重试队列，默认最多重试 16 次，重试间隔递增（10s、30s、1m、2m…2h）。</li>
+<li><strong>死信队列（DLQ）</strong>：重试耗尽后消息进入死信队列，需要人工介入处理。</li>
+<li><strong>幂等消费</strong>：由于消息可能被重复投递（网络抖动、重试），消费者必须实现幂等——通常用消息 ID 或业务唯一键做去重。</li>
+</ul>
+<p><strong>本地消息表模式（替代方案）：</strong></p>
+<p>如果不用 RocketMQ，也可以用本地消息表（Local Message Table）模式。原理一样：在同一个数据库事务里插入业务数据和一条”待发送”的消息记录，然后由定时任务轮询这张表去发消息。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// 1. 业务操作和消息记录在同一个本地事务中</span><br><span class="hljs-meta">@Transactional</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">createOrder</span><span class="hljs-params">(Order order)</span> &#123;<br>    orderMapper.insert(order);  <span class="hljs-comment">// 业务数据</span><br>    messageMapper.insert(<span class="hljs-keyword">new</span> <span class="hljs-title class_">LocalMessage</span>(order.getId(), “ORDER_CREATED”, “PENDING”)); <span class="hljs-comment">// 消息记录</span><br>&#125;<br><br><span class="hljs-comment">// 2. 定时任务轮询发送（独立进程）</span><br><span class="hljs-meta">@Scheduled(fixedDelay = 1000)</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">pollAndSend</span><span class="hljs-params">()</span> &#123;<br>    List&lt;LocalMessage&gt; messages = messageMapper.selectByStatus(“PENDING”, <span class="hljs-number">100</span>);<br>    <span class="hljs-keyword">for</span> (LocalMessage msg : messages) &#123;<br>        <span class="hljs-keyword">try</span> &#123;<br>            mqTemplate.send(msg.getTopic(), msg.getBody());<br>            msg.setStatus(“SENT”);<br>            messageMapper.update(msg);<br>        &#125; <span class="hljs-keyword">catch</span> (Exception e) &#123;<br>            msg.setRetryCount(msg.getRetryCount() + <span class="hljs-number">1</span>);<br>            messageMapper.update(msg); <span class="hljs-comment">// 重试计数，超过阈值告警</span><br>        &#125;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>RocketMQ 事务消息</th>
+<th>本地消息表</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>可靠性</td>
+<td>高（半消息 + 回查机制）</td>
+<td>高（本地事务保证原子性）</td>
+</tr>
+<tr>
+<td>实时性</td>
+<td>高（消息就绪即可投递）</td>
+<td>受轮询间隔影响（通常 1-5 秒）</td>
+</tr>
+<tr>
+<td>侵入性</td>
+<td>低（只需实现回查接口）</td>
+<td>中（需建消息表 + 定时任务）</td>
+</tr>
+<tr>
+<td>运维成本</td>
+<td>中（依赖 RocketMQ 集群）</td>
+<td>低（只依赖数据库）</td>
+</tr>
+<tr>
+<td>数据库 I&#x2F;O</td>
+<td>无额外开销</td>
+<td>有竞争（业务表 + 消息表同库）</td>
+</tr>
+</tbody></table>
+<p>这是微服务解耦最常用的方案，牺牲了实时性，换取高可用和分区容错性。</p>
+<h2 id="五种模式横向对比"><a href="#五种模式横向对比" class="headerlink" title="五种模式横向对比"></a>五种模式横向对比</h2><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>Seata AT</th>
+<th>Seata XA</th>
+<th>Seata TCC</th>
+<th>Seata Saga</th>
+<th>RocketMQ 事务消息</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>一致性级别</strong></td>
+<td>最终一致</td>
+<td>强一致</td>
+<td>最终一致</td>
+<td>最终一致</td>
+<td>最终一致</td>
+</tr>
+<tr>
+<td><strong>隔离性</strong></td>
+<td>全局锁（读未提交）</td>
+<td>数据库原生隔离</td>
+<td>业务层保证</td>
+<td>无隔离（需语义锁）</td>
+<td>不涉及</td>
+</tr>
+<tr>
+<td><strong>性能</strong></td>
+<td>中等（全局锁开销）</td>
+<td>低（长锁持有）</td>
+<td>高（无 DB 锁）</td>
+<td>高（无 DB 锁）</td>
+<td>高（异步）</td>
+</tr>
+<tr>
+<td><strong>代码侵入性</strong></td>
+<td>低（加注解）</td>
+<td>低（加注解）</td>
+<td>高（三方法 + 异常处理）</td>
+<td>中（状态机定义）</td>
+<td>低（回查接口）</td>
+</tr>
+<tr>
+<td><strong>开发成本</strong></td>
+<td>低</td>
+<td>低</td>
+<td>高</td>
+<td>中</td>
+<td>低</td>
+</tr>
+<tr>
+<td><strong>SQL 兼容性</strong></td>
+<td>有限制（不支持存储过程等）</td>
+<td>完全兼容</td>
+<td>不涉及</td>
+<td>不涉及</td>
+<td>不涉及</td>
+</tr>
+<tr>
+<td><strong>适用场景</strong></td>
+<td>中后台、非热点数据</td>
+<td>财务、ERP 等强一致需求</td>
+<td>核心资金链路、高并发</td>
+<td>长流程、跨机构</td>
+<td>异步解耦、最终一致</td>
+</tr>
+<tr>
+<td><strong>典型业务</strong></td>
+<td>订单创建 + 库存扣减</td>
+<td>转账、对账</td>
+<td>支付、扣款</td>
+<td>旅行预订、电商履约</td>
+<td>积分、通知、日志</td>
+</tr>
+</tbody></table>
+<p><strong>选型决策路径：</strong></p>
+<figure class="highlight ada"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs ada">需要分布式事务<br>├─ 需要强一致？ → XA 模式（接受性能换一致性）<br>├─ 核心资金链路 + 高并发？ → TCC 模式（接受开发成本换性能）<br>├─ 业务流程长 + 跨机构？ → Saga 模式（接受最终一致换灵活性）<br>├─ 只需要最终一致 + 异步？ → RocketMQ 事务消息<br>└─ 追求开发效率 + 非热点数据？ → <span class="hljs-keyword">AT</span> 模式（最简单但有性能上限）<br></code></pre></td></tr></table></figure>
+
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" class="category-chain-item">架构设计</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1/" class="print-no-link">#分布式事务</a>
+      
+        <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" class="print-no-link">#微服务</a>
+      
+        <a href="/tags/%E6%95%B0%E6%8D%AE%E4%B8%80%E8%87%B4%E6%80%A7/" class="print-no-link">#数据一致性</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>分布式事务</div>
+      <div>https://gavinmo1.github.io/2026/06/21/分布式事务/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Gavin</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2026年6月21日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by-sa/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by-sa/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="SA - 相同方式共享">
+                    <i class="iconfont icon-cc-sa"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2026/04/26/Redis%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E8%AF%A6%E8%A7%A3/" title="Redis数据结构详解">
+                        <span class="hidden-mobile">Redis数据结构详解</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"> <span>Hexo</span> </a> <i class="iconfont icon-love"> </i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"> <span>Fluid</span> </a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>
