@@ -1,0 +1,850 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.ico">
+  <link rel="icon" href="/img/favicon-v2.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Gavin">
+  <meta name="keywords" content="Computer Science">
+  
+    <meta name="description" content="Redis 有五大基础数据类型：String、List、Hash、Set 和 ZSet。这五种类型是正交的，互相不可替代，且构成了完备的数据表达能力：  String 对应单一标量 List 对应线性序列 Hash 对应键值映射 Set 对应无序且不重复的集合 ZSet 对应带权重的排序集合  为了在内存占用和计算性能之间寻找一个平衡点，Redis 并没有直接将对外暴露的数据类型映射为单一的底层实">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Redis数据结构详解">
+<meta property="og:url" content="https://gavinmo1.github.io/2026/02/28/Redis%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E8%AF%A6%E8%A7%A3/index.html">
+<meta property="og:site_name" content="开发札记">
+<meta property="og:description" content="Redis 有五大基础数据类型：String、List、Hash、Set 和 ZSet。这五种类型是正交的，互相不可替代，且构成了完备的数据表达能力：  String 对应单一标量 List 对应线性序列 Hash 对应键值映射 Set 对应无序且不重复的集合 ZSet 对应带权重的排序集合  为了在内存占用和计算性能之间寻找一个平衡点，Redis 并没有直接将对外暴露的数据类型映射为单一的底层实">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-02-28T07:22:10.000Z">
+<meta property="article:modified_time" content="2026-08-12T08:03:26.442Z">
+<meta property="article:author" content="Gavin">
+<meta property="article:tag" content="Redis">
+<meta property="article:tag" content="SDS">
+<meta property="article:tag" content="数据结构">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>Redis数据结构详解 - 开发札记</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+  
+<link rel="stylesheet" href="/css/custom.css">
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"gavinmo1.github.io","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"|","loop":false,"scope":["home"]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>开发札记</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/featured/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>精选</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/dream.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle">Redis数据结构详解</span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-02-28 15:22" pubdate>
+          2026年2月28日 下午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          5.4k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          45 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">Redis数据结构详解</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <p>Redis 有五大基础数据类型：String、List、Hash、Set 和 ZSet。这五种类型是正交的，互相不可替代，且构成了完备的数据表达能力：</p>
+<ul>
+<li>String 对应单一标量</li>
+<li>List 对应线性序列</li>
+<li>Hash 对应键值映射</li>
+<li>Set 对应无序且不重复的集合</li>
+<li>ZSet 对应带权重的排序集合</li>
+</ul>
+<p>为了在内存占用和计算性能之间寻找一个平衡点，Redis 并没有直接将对外暴露的数据类型映射为单一的底层实现，而是采用了多态的设计。每种对象都是由 redisObject 结构体表示，内部通过 encoding 属性决定实际使用哪种底层数据结构。这种设计使得 Redis 可以根据存储数据的数量和类型，动态地进行切换底层数据结构。</p>
+<h3 id="String：SDS"><a href="#String：SDS" class="headerlink" title="String：SDS"></a>String：SDS</h3><p><strong>适用场景：缓存与简单键值存储。</strong> String 是 Redis 中最常用、最万能的类型。任何只需要存一个值的场景都应该优先考虑它：缓存数据库查询结果（JSON 字符串）、存储 Session Token、用 <code>INCR</code>&#x2F;<code>DECR</code> 实现计数器（阅读量、点赞数）、用 <code>SETNX</code> 实现分布式锁。如果你拿不准用什么类型，选 String 准没错。</p>
+<p>Redis 的 String 类型并没有使用 C 语言原生的字符串，而是设计了一个新的数据类型，叫做<strong>简单动态字符串</strong>（Simple Dynamic String, <strong>SDS</strong>）</p>
+<p>这个 SDS 内部维护了 len（已用长度）和 alloc（分配总空间）两个字段。</p>
+<p>这使得它可以<strong>以 O(1) 的时间复杂度获取长度</strong>，同时也<strong>杜绝了 C 语言原生字符串的缓冲区溢出和二进制安全的问题</strong>。因为在 Redis 中修改字符串时，SDS 会预先检查空间是否充足，如果不足，它会进行自动扩容。同时，它会通过长度属性（len）来判断字符串的实际长度，而不是依赖空字符（\0）来判断结尾，这样它就可以安全地存储二进制数据。</p>
+<p>而且，SDS 还采用了空间预分配策略和惰性空间释放策略。当字符串增加时，它会分配比实际需要更多的空间，减少了连续追加操作时的内存重分配次数，提高了性能。当字符串缩短时，程序不会立即回收内存，避免缩短后再次追加导致频繁的内存分配。</p>
+<h3 id="List：Quicklist"><a href="#List：Quicklist" class="headerlink" title="List：Quicklist"></a>List：Quicklist</h3><p><strong>适用场景：队列与时间线。</strong> List 天然适合“有序 + 频繁在两端操作”的场景。用 <code>LPUSH</code> + <code>BRPOP</code> 可以实现一个阻塞消息队列；用 <code>LPUSH</code> + <code>LTRIM</code> 可以实现固定长度的最新动态流（比如保留最近 100 条消息）；<code>LRANGE</code> 可以实现分页展示。如果你的业务需要一个“先进先出”或“最新 N 条”的语义，List 是最直接的选择。</p>
+<p>在 Redis 3.2 之后，List 的底层统一从之前的 ZipList 和 LinkedList 换成了 QuickList。</p>
+<h4 id="QuickList"><a href="#QuickList" class="headerlink" title="QuickList"></a>QuickList</h4><p>QuickList 本质上是一个<strong>双向链表</strong>，但它的每个节点并不直接存储数据，而是<strong>指向一个 ZipList（Redis 7.0 之后替换为 Listpack）</strong>。这样做的好处是：</p>
+<ul>
+<li><strong>像 LinkedList 一样</strong>：节点之间通过 prev&#x2F;next 指针连接，两端增删都是 $O(1)$。</li>
+<li><strong>像 ZipList（Listpack）一样</strong>：每个节点内部是一块连续内存，数据紧密排列，没有指针开销，对 CPU Cache 极其友好。</li>
+</ul>
+<p>简单来说，QuickList &#x3D; LinkedList + ZipList（Listpack）。<strong>链表负责整体的灵活增删，内部的 ZipList&#x2F;Listpack 负责紧凑存储</strong>。</p>
+<h4 id="ZipList"><a href="#ZipList" class="headerlink" title="ZipList"></a>ZipList</h4><p>ZipList 是一种为<strong>节省内存</strong>而设计的顺序型数据结构。由<strong>一系列特殊编码的连续内存块组成，没有指针开销</strong>。</p>
+<p>一个传统的双向链表节点大概长这样：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">Node</span> &#123;</span><br>    String data;       <span class="hljs-comment">// 真正的数据，比如存个 &quot;hi&quot;（占 2 字节）</span><br>    <span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">Node</span>* <span class="hljs-title">prev</span>;</span> <span class="hljs-comment">// 指向上一个节点的指针（64 位系统占 8 字节）</span><br>    <span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">Node</span>* <span class="hljs-title">next</span>;</span> <span class="hljs-comment">// 指向下一个节点的指针（64 位系统占 8 字节）</span><br>&#125;;<br></code></pre></td></tr></table></figure>
+
+<p>为了存一个只有 2 字节的单词，要额外花 <strong>16 个字节</strong> 去存 <code>prev</code> 和 <code>next</code> 指针！而且，链表的节点在内存中是随机散落的，这对 Cache Line 极不友好。</p>
+<p><strong>Ziplist 是一个被极其压缩的字节数组</strong>。它向操作系统申请一整块连续的内存，把所有的数据挤在一起，内部没有任何指针。</p>
+<p>Ziplist 里的一个节点（Entry）由三部分组成：<code>[prevlen] [encoding] [data]</code></p>
+<ol>
+<li><code>prevlen</code>：记录 <strong>上一个节点的总字节数</strong>。</li>
+<li><code>encoding</code>：一个变长字段。它的最高几位二进制用于标识数据类型，剩下的二进制位记录当前节点的 <code>data</code> 部分占用的字节数。</li>
+<li><code>data</code>：实际存储的数据内容。</li>
+</ol>
+<p>Ziplist 由多个 entry 顺序紧密排布，单个 entry 分为三段：<code>[prevlen] [encoding] [data]</code></p>
+<p>其中 prevlen 是变长字段，且只有两种形态：1 字节或 5 字节。用来保存前一个 entry 的总字节数量，这样就可以实现反向遍历。</p>
+<p>解析规则是读取 prevlen 的第一个字节：</p>
+<ol>
+<li>如果首字节的值不等于 0xFF，说明 prevlen 字段仅占用一个字节，字节内就是上一个 entry 的长度。</li>
+<li>如果首字节的值等于 0xFF，说明 prevlen 字段占用五个字节，首字节是标志位，后续四个字节存储长度。</li>
+</ol>
+<p>Encoding 也是一个变长字段，它有三种情况，分别是 1、2、5 字节。</p>
+<p>可以通过字节高位的标志比特区分编码类型，标识后续 data 存储的是字符串还是整数：</p>
+<ol>
+<li>如果是字符串类型：Encoding 内部会同时记录 data 的字节长度</li>
+<li>如果是整数类型：长度将由编码格式直接确定</li>
+</ol>
+<p>解析规则是读取 Encoding 的第一个字节，解析高位标记，以此来判断 Encoding 自身一共占用多少字节，再提取数据相关的信息。</p>
+<p>字符串编码：</p>
+<ul>
+<li><code>00xxxxxx</code> → encoding 占 <strong>1 字节</strong>，低 6 位代表字符串长度</li>
+<li><code>01xxxxxx</code> → encoding 占 <strong>2 字节</strong>，低 14 位代表字符串长度</li>
+<li><code>10xxxxxx</code> → encoding 占 <strong>5 字节</strong>，后 4 字节代表字符串长度</li>
+</ul>
+<p> 整数编码：<code>11xxxxxx</code> → encoding 只占 <strong>1 字节</strong>，后续没有单独的长度字段。data 长度由编码类型直接确定。</p>
+<p>data：根据 encoding 指定的格式保存二进制字符串或者压缩整数。</p>
+<h5 id="ZipList-连锁更新问题"><a href="#ZipList-连锁更新问题" class="headerlink" title="ZipList 连锁更新问题"></a>ZipList 连锁更新问题</h5><p>上文我们有提到，prevlen 是一个变长字段，它的变长规则与上一个 entry 的总字节数量相关：</p>
+<ol>
+<li>如果前一个节点的大小小于 254 字节，prevlen 整体只占 1 个字节；</li>
+<li>如果大于等于 254 字节，prevlen 就必须扩容到 5 个字节。</li>
+</ol>
+<p>这就会带来一个问题。如果你的 ziplist 里有连续的多个节点（比如 e1、e2、e3），它们每个节点的总大小刚好都是 253 字节。因为 253 小于 254，所以从 e2 开始，它们的 prevlen 都是 1 字节，大家都相安无事。</p>
+<p>突然，我要在 ziplist 的头部插入一个新节点 e0，大小是 254 或者 255 字节。那么问题就来了：</p>
+<p>e1 发现前面的节点变成了 255 字节（大于等于 254 字节），它的 prevlen 需要从 1 字节扩容到 5 字节。这就会导致 e1 的大小从原来的 253 字节变成了 257 字节，增长了 4 个字节。</p>
+<p>而 e1 增长到 257 字节后，又会导致后面的 e2 产生相同的变化（因为 257 同样大于等于 254 字节，e2 的 prevlen 也需要扩容）。如此往复，会引发连锁反应，一个节点的插入导致后续所有的节点全部被迫扩大容量。</p>
+<p>而且，因为 ziplist 是一块连续内存，所以哪怕只需要扩大 4 个字节，Redis 也必须向操作系统重新申请一块更大的内存，并将所有数据拷贝过去。这会导致这一次的插入操作，性能从 O(1) 直接暴跌到 O(N^2)。</p>
+<p>这就是 ziplist 的连锁更新问题。</p>
+<h4 id="Listpack"><a href="#Listpack" class="headerlink" title="Listpack"></a>Listpack</h4><p>由于连锁更新过于致命，Redis 7.0 废弃了 Ziplist，替换为 Listpack。</p>
+<p>Listpack 的设计目标非常明确：在保持 Ziplist 省内存的前提下，消灭连锁更新。</p>
+<p>Listpack 中 Entry 的结构变更为：<code>[encoding] [data] [backlen]</code></p>
+<ol>
+<li><strong>encoding</strong>：当前节点的编码类型（是字符串还是整数）。</li>
+<li><strong>data</strong>：当前节点的实际数据。</li>
+<li><strong>backlen (Back Length)</strong>：记录 <strong>当前节点的 <code>encoding</code> 自身大小 + <code>data</code> 大小之和</strong>。（注意：它不包含 <code>backlen</code> 自身的大小）。</li>
+</ol>
+<p>第一个变成了 encoding，依然是变长字段，但状态更多，主要是一字节为主。</p>
+<p>作用仍然是标记后面的 data 的数据类型：</p>
+<ol>
+<li>如果是字符串类型，那么它会在里面附带记录上字符串长度</li>
+<li>如果是小整数，那么甚至可以直接将数值塞进 encoding 内部，不需要使用到 data 区域</li>
+</ol>
+<p>第二个是 data，实际存储的数据，基本上没什么区别。值得一提的是，因为 encoding 里面记录了它的长度，所以说它是二进制安全的，可以存放任意字节。</p>
+<p>第三个是 Listpack 的核心，引入了 backlen。保存 encoding 和 data 这两部分一共占用了多少字节。而且，<strong>backlen 采用了一种特殊的从右向左解析的多字节变长编码</strong>。</p>
+<p>每个字节的最高位是标志位：</p>
+<ul>
+<li>1：表示<strong>右边还有</strong>属于 backlen 的字节。</li>
+<li>0：表示<strong>这是 backlen 的最后一个字节</strong>（物理内存上的最右侧字节，也是反向遍历的<strong>起始读取点</strong>）。</li>
+</ul>
+<p>通过这样巧妙的最高位设计，Listpack 同时兼顾了正向遍历和反向遍历。</p>
+<h3 id="Hash：Listpack-Dict"><a href="#Hash：Listpack-Dict" class="headerlink" title="Hash：Listpack-&gt;Dict"></a>Hash：Listpack-&gt;Dict</h3><p><strong>适用场景：结构化对象存储。</strong> Hash 专门用来存储“一个实体的多个字段”。比如一个用户有 name、age、email 等多个属性，如果用 String 存，你只能把整个对象序列化成一个 JSON，改一个字段就要读写整个值；用 Hash 存，每个字段独立可读写（<code>HGET</code>&#x2F;<code>HSET</code>），内存效率更高。常见用法：用户信息缓存、商品详情、配置项集合。当你有一组相关的 key-value 需要作为一个整体管理时，选 Hash。</p>
+<p>当一个 Hash 对象包含的键值对极少（默认小于 512 个），且所有的键和值的字符串长度都很短（默认小于 64 字节）时，Redis 会使用 <strong>Listpack</strong> 来充当 Hash（以前是 ziplist）。</p>
+<p>一个哈希对象包含的键值对极少（默认小于 128 个），且所有的键和值的字符串长度都很短（默认小于 64 字节）时，Redis 会使用 Listpack 来充当哈希（Redis 7.0 之前使用的是 ziplist）。</p>
+<p>虽然 Listpack 是线性结构，但是 Redis 采用了一个非常简单粗暴的设计，将其当做 Hash 来使用。</p>
+<p>Redis 直接把哈希的 key 和 value 做成两个连续的节点，紧挨着塞进 Listpack 中。</p>
+<p>非常简单粗暴：Redis 直接把 Hash 的 Key 和 Value 作为两个连续的节点，紧挨着塞进 Listpack 中。</p>
+<p>物理内存长这样：<code>[Key1] [Value1] [Key2] [Value2] [Key3] [Value3] ...</code></p>
+<p>查询的时候，就是遍历 Listpack，每次跳过两个节点，比较当前节点的 key 是否匹配，匹配则取下一个节点的值。</p>
+<p>虽然这样是 O(N) 的复杂度，但是因为数据量很小，而且 Listpack 是一块连续内存，CPU 缓存命中率很高，一般情况下它的速度不亚于计算哈希值去查哈希表。</p>
+<p>这样做的好处是没有任何指针开销，非常省内存，而且也没有复杂的哈希冲突处理逻辑。</p>
+<p>当数据量突破了上述阈值的时候，Hash 会发生底层编码的转换，蜕变为字典（Dict）。</p>
+<h4 id="Dict"><a href="#Dict" class="headerlink" title="Dict"></a>Dict</h4><p>Dict 并不是一个孤立的哈希表（hash table），而是由<strong>两个哈希表</strong>以及<strong>一个指针</strong>组成。</p>
+<p>为什么要用两个哈希表呢？</p>
+<p>因为传统的哈希表在扩容时，会申请一块更大的新数组，然后把老数组里的所有数据重新计算哈希并搬运过去。但 Redis 不能这么干，因为 Redis 是单线程的。如果你的数据量比较大，一次性搬运可能需要耗费数秒钟的时间。在这几秒钟内，整个 Redis 都将处于假死状态，任何其他的命令都无法执行。</p>
+<p>所以，Redis 通过 Dict 这个特殊的结构体维护了两个哈希表，以及一个索引变量 rehashidx。利用这个特殊的结构，Redis 将整个 rehash 过程分散到多次客户端请求的处理和定时任务中。</p>
+<ul>
+<li><code>ht[0]</code>：0 号哈希表是正常服务期间的主存储空间。</li>
+<li><code>ht[1]</code>：1 号仅在 rehash 开始时才会被分配内存。</li>
+<li>rehashidx：进度游标。-1 表示当前未进行 rehash。&gt;&#x3D;0 表示 rehash 正在进行，数值代表所指向哈希表中正在迁移的桶索引。</li>
+</ul>
+<p>当哈希表的负载因子（<code>load factor = ht[0].used / ht[0].size</code>）超过阈值（默认为 1）时，Redis 会触发 Rehash。</p>
+<p>扩容过程：</p>
+<ol>
+<li>为 <code>ht[1]</code> 分配足够大的空间（通常是 <code>ht[0]</code> 当前容量的 $2^n$ 倍）。将 <code>rehashidx</code> 设置为 0。</li>
+<li>在此期间，每次对该 Hash 执行 <code>HADD</code>、<code>HDEL</code>、<code>HGET</code> 等命令时，Redis 除了执行本来要做的操作，还会顺手把 <code>ht[0]</code> 在 <code>rehashidx</code> 索引位置上的所有键值对，搬运到 <code>ht[1]</code> 中。搬完后，<code>rehashidx</code> 加 1。如果服务器很闲，没人来访问这个 Hash。Redis 的后台定时任务 <code>serverCron</code>（每秒执行 10 次）会主动介入，每次给它 1 毫秒的时间去搬运。</li>
+<li>当 <code>ht[0]</code> 的所有数据都被搬空后，释放 <code>ht[0]</code>，将 <code>ht[1]</code> 重命名为 <code>ht[0]</code>，并把 <code>rehashidx</code> 重置为 -1。</li>
+</ol>
+<p>值得一提的是，这两个哈希表并不会轮流充当新旧表，而是在搬运完之后，直接将指针的指向进行一个交换，永远都是 <code>ht[0]</code> 作为存储的主要空间。</p>
+<p>搬运期间的读写规则：</p>
+<ul>
+<li>查、删、改：先去 <code>ht[0]</code> 找，找不到再去 <code>ht[1]</code> 找。</li>
+<li>增：<strong>所有的新增数据，直接写入 <code>ht[1]</code></strong>。保证了 <code>ht[0]</code> 里的数据只会越来越少。</li>
+</ul>
+<p>单个的哈希表就是一个经典的桶数组，每一个桶（slot）它是一个链表头。当多个 key 被哈希到同一个位置的时候，它们通过链表串在一起。</p>
+<h3 id="Set：Intset-Dict"><a href="#Set：Intset-Dict" class="headerlink" title="Set：Intset-&gt;Dict"></a>Set：Intset-&gt;Dict</h3><p><strong>适用场景：去重与集合运算。</strong> Set 的核心能力是“不重复 + 集合运算”。用 <code>SADD</code> + <code>SMEMBERS</code> 管理标签系统；用 <code>SINTER</code> 求两个用户的共同关注；用 <code>SDIFF</code> 找出 A 关注了但 B 没关注的人；用 <code>SRANDMEMBER</code> 随机抽取幸运用户。如果你的场景需要“保证唯一性”或者需要做交集、并集、差集运算，Set 是唯一正确的选择。</p>
+<p>Set 同样有两种形态：Intset 和 Dict。</p>
+<p>如果往 set 里存的都是数字，并且数量不多，那么 Redis 就会采用 Intset 这个特殊的结构，以达到节省内存的目的。</p>
+<p>Intset 内部没有哈希表，它就是一个严格递增排序的连续的整数数组。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">Intset</span> &#123;</span><br>    <span class="hljs-type">uint32_t</span> encoding; <span class="hljs-comment">// 编码方式（决定每个元素占几个字节：16 位、32 位还是 64 位）</span><br>    <span class="hljs-type">uint32_t</span> length;   <span class="hljs-comment">// 元素数量</span><br>    <span class="hljs-type">int8_t</span> contents[]; <span class="hljs-comment">// 保存元素的连续数组</span><br>&#125;;<br></code></pre></td></tr></table></figure>
+
+<p>因为数组是严格递增的，所以对于查找，Redis 直接采用二分查找，时间复杂度是 O(log N) 级别。</p>
+<p>同时，Intset 支持动态升级。假如一开始存的都是一些小数字（例如 1, 2, 3），它们用 16 位整数、两字节就能够装下，所以 Encoding 会被设为 16 位，数组里每个元素只占两字节。</p>
+<p>但是，如果你突然往里面新增了一个超出 32 位范围的大数字，Redis 就会触发数组升级：</p>
+<ol>
+<li>将 Encoding 修改为 int64_t（8 个字节）</li>
+<li>按照 8 个字节的大小重新计算并分配整个数组的内存</li>
+<li>将原来两字节的旧数据在内存中从后往前移动，扩展为 8 个字节</li>
+<li>最后把新来的超大数字放到末尾</li>
+</ol>
+<p>需要注意的是，Intset 只支持升级，不支持降级。即使后来你把那个大数字删了，数组依然会保持 8 字节的步长。</p>
+<p>当满足下面两个条件之一的时候，set 的底层数据结构会从 Intset 转换为 Dict：</p>
+<ol>
+<li>试图插入一个非数字的字符串</li>
+<li>集合中的元素数量超过了阈值（默认是 512 个）</li>
+</ol>
+<p>当使用 Dict 的时候，Dict 的 key 会存储 set 的元素，而 value 会全部指向 NULL。</p>
+<h3 id="ZSet：Listpack-Dict-Skiplist"><a href="#ZSet：Listpack-Dict-Skiplist" class="headerlink" title="ZSet：Listpack-&gt;Dict + Skiplist"></a>ZSet：Listpack-&gt;Dict + Skiplist</h3><p> <strong>适用场景：排行榜与优先队列。</strong> ZSet 的核心能力是“带权重的有序集合”。用 <code>ZADD</code> + <code>ZREVRANGE</code> 实现实时排行榜（比如按在线时长排名）；用 <code>ZRANGEBYSCORE</code> 实现延迟队列（Score 存截止时间戳，取到期任务）；用 <code>ZINCRBY</code> 动态更新权重。任何需要“按某个指标排序 + 取 Top N &#x2F; 取区间”的场景，ZSet 都是最优解。</p>
+<p>ZSet 既要支持通过 Member 快速找到 Score，又要支持按照 Score 进行范围排序。这两个需求在单一数据结构中很难同时高效满足，因此 ZSet 采用了<strong>双结构并存</strong>的架构：Dict + Skiplist。</p>
+<p>老规矩，数据量小的时候，ZSET 使用 Listpack。</p>
+<p>物理布局长这样：<code>[Member1] [Score1] [Member2] [Score2] ...</code></p>
+<p>不过需要注意一个细节，就是此时 Listpack 内部会严格按照 score 从小到大的顺序来维护。这意味着每次插入新元素的时候，Redis 需要遍历 Listpack 来找到正确的排序位置，然后把后面的数据整体后移。这本质上是一个 O(N) 的插入操作，不过因为数据量极小，这块连续内存的拷贝可以在瞬间完成，完全可以接受。</p>
+<p>ZSCORE 查询的时候，需要遍历 Listpack，每次跳过两个节点，逐个比较 member 是否匹配。虽然是 O(N) 的复杂度，但在小数据量下，并且因为连续内存的 CPU 缓存命中率极高，速度并不慢。</p>
+<p>ZRANGE 范围查询的时候就更加简单了，，因为 Listpack 已经按 Score 排好序了，Redis 只需要遍历到起始位置，然后沿着物理顺序依次取出节点即可。</p>
+<p>当元素数量突破阈值，Listpack 的 $O(N)$ 查找就成了瓶颈。</p>
+<p>Redis 需要同时满足两种截然不同的访问方式：</p>
+<ol>
+<li>点查：给定 member 找它的 score，这需要一个哈希表。</li>
+<li>范围查找：按 score 区间取数据，这需要数据按 score 排好序。</li>
+</ol>
+<p>单一结构无法同时高效满足两者，所以 Redis 的方案是：<strong>两个都建，各司其职</strong>。</p>
+<p>当 ZSet 底层转换为 dict 加 Skiplist 的时候，内存中会同时存在两个结构：</p>
+<ol>
+<li>dict：以 member 为 key 的哈希表</li>
+<li>Skiplist：按 score 排序的多层链表</li>
+</ol>
+<p>两者在底层共享同一组 member 和 score 对象的内存地址，这样可以避免产生数据冗余。</p>
+<h4 id="Skiplist"><a href="#Skiplist" class="headerlink" title="Skiplist"></a>Skiplist</h4><p><strong>跳表（Skiplist）是一种基于概率统计的随机化数据结构，在链表基础上增加了多级索引</strong>。它是一种典型的”以空间换时间”的多层链表结构。</p>
+<p><strong>核心特点</strong>：</p>
+<ul>
+<li>最底层包含所有元素，上层链表是下层的索引</li>
+<li>每个节点包含指向前驱、后继的指针，以及多层级的 “跳跃” 指针</li>
+<li>平均查找复杂度为 O(log N)，媲美平衡树</li>
+<li>相比平衡树，实现更简单，且支持高效的范围查询</li>
+</ul>
+<p><strong>概率平衡机制</strong>：不同于 AVL 树或红黑树通过旋转来维持严格平衡，跳表通过 “抛硬币” 的方式决定新节点的层数。</p>
+<ol>
+<li>设定概率 $p$（常用 $p&#x3D;0.5$）</li>
+<li>层高规则：<ul>
+<li>初始层数 &#x3D; 1</li>
+<li>每次抛硬币，50% 概率层数 +1，直到失败或达到最大限制层高</li>
+</ul>
+</li>
+</ol>
+<p>这种随机性在宏观上能保证查询效率接近 O(log N)。</p>
+<p>为什么是跳表，而不是红黑树或 B+ 树？</p>
+<p>antirez 亲自在邮件列表中给出了选择跳表的三个原因：</p>
+<ol>
+<li><strong>内存灵活性</strong>：一棵红黑树，每个节点必须强绑定 2 个指针（左子树、右子树），有时候还需要父节点指针。而在 Redis 的跳表实现中，节点晋升到高层的概率 $p&#x3D;1&#x2F;4$。用数学期望可以算出一个跳表节点平均只包含 <strong>1.33 个指针</strong>！这比红黑树省了大量指针内存。</li>
+<li><strong>高效的的范围查询</strong>：假设你要查排行榜第 50 名到 100 名的玩家。如果用红黑树，你找到第 50 名后，接下来需要在一棵复杂的树形结构里不断进行 <strong>中序遍历</strong>，指针忽上忽下，对 CPU 缓存极度不友好。而跳表的最底层，就是一条完美的 <strong>有序双向链表</strong>！找到第 50 名后，你只需要沿着底层的 <code>next</code> 指针“无脑”往后顺藤摸瓜即可，极其畅快。</li>
+<li><strong>实现简单</strong>：红黑树的插入和删除，伴随着令人抓狂的“左旋”、“右旋”和“颜色翻转”，稍有不慎就有 Bug。而跳表的插入，只需要调用一下随机函数 <code>random()</code> 决定层数，然后像修改普通链表一样改几个指针即可。跳表的 C 语言代码行数远低于红黑树，这非常符合 Redis <strong>“Keep It Simple”</strong> 的核心哲学。</li>
+</ol>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/" class="category-chain-item">数据库</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Redis/" class="print-no-link">#Redis</a>
+      
+        <a href="/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" class="print-no-link">#数据结构</a>
+      
+        <a href="/tags/SDS/" class="print-no-link">#SDS</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>Redis数据结构详解</div>
+      <div>https://gavinmo1.github.io/2026/02/28/Redis数据结构详解/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Gavin</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2026年2月28日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by-sa/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by-sa/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="SA - 相同方式共享">
+                    <i class="iconfont icon-cc-sa"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2026/04/26/MySQL%E6%97%A5%E5%BF%97%E5%85%A8%E8%A7%A3/" title="MySQL日志全解">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">MySQL日志全解</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2025/12/13/ThreadLocal/" title="ThreadLocal">
+                        <span class="hidden-mobile">ThreadLocal</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"> <span>Hexo</span> </a> <i class="iconfont icon-love"> </i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"> <span>Fluid</span> </a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>
